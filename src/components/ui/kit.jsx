@@ -112,7 +112,7 @@ export function InfoRow({ label, value }) {
 }
 
 // ---- simple data table ----
-export function DataTable({ columns, rows, empty = "Nothing here yet." }) {
+export function DataTable({ columns, rows, empty = "Nothing here yet.", onRowClick }) {
   if (!rows || rows.length === 0) {
     return <div className="rounded-xl border border-dashed border-border bg-muted/40 py-8 text-center text-sm text-muted-foreground">{empty}</div>;
   }
@@ -128,7 +128,8 @@ export function DataTable({ columns, rows, empty = "Nothing here yet." }) {
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className="border-t border-border/70 hover:bg-primary/[0.03]">
+            <tr key={i} onClick={onRowClick ? () => onRowClick(row) : undefined}
+              className={cn("border-t border-border/70 hover:bg-primary/[0.03]", onRowClick && "cursor-pointer")}>
               {columns.map((c) => (
                 <td key={c.key} className="whitespace-nowrap px-3.5 py-2.5 text-foreground">
                   {c.render ? c.render(row) : row[c.key]}

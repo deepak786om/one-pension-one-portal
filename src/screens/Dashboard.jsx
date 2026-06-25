@@ -6,7 +6,9 @@ import { Screen } from "../components/PortalShell.jsx";
 import { getRole, MODULES } from "../data/rbac.js";
 import { KPI, StatusPill } from "../components/ui/kit.jsx";
 import { getPensionerModule } from "./pensioner/index.jsx";
+import { getHooModule } from "./hoo/index.jsx";
 import { PENSIONER, PAYMENTS, GRIEVANCES, DLC_STATUS, FORM6A } from "../data/pensioner.js";
+import { HOO_OFFICE, RETIREES, HOO_GRIEVANCES } from "../data/hoo.js";
 import { formatINR } from "../lib/pension.js";
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
@@ -15,19 +17,22 @@ const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
 export default function Dashboard({ roleId, onLogout }) {
   const role = getRole(roleId);
   const isPensioner = role.id === "PENSIONER";
+  const isHOO = role.id === "HOO";
+  const moduleFor = (key) => (isPensioner ? getPensionerModule(key) : isHOO ? getHooModule(key) : null);
+
   const [active, setActive] = useState(null);
   const [toast, setToast] = useState("");
   const [ppoGenerated, setPpoGenerated] = useState(PENSIONER.ppoGenerated);
 
   const openTile = (key) => {
-    if (isPensioner && getPensionerModule(key)) { setActive(key); return; }
+    if (moduleFor(key)) { setActive(key); return; }
     const label = (MODULES[key] || {}).label || key;
     setToast(label + " — module coming soon");
     window.clearTimeout(openTile._t);
     openTile._t = window.setTimeout(() => setToast(""), 1900);
   };
 
-  const ActiveModule = isPensioner && active ? getPensionerModule(active) : null;
+  const ActiveModule = active ? moduleFor(active) : null;
   if (ActiveModule) {
     return (
       <AnimatePresence mode="wait">
@@ -37,18 +42,24 @@ export default function Dashboard({ roleId, onLogout }) {
   }
 
   const openGriev = GRIEVANCES.filter((g) => g.status !== "Resolved").length;
+  const hooRetiring = RETIREES.filter((r) => r.stage < 6).length;
+  const hooAwaitPPO = RETIREES.filter((r) => !r.ppo && r.stage >= 4).length;
+  const hooGriev = HOO_GRIEVANCES.filter((g) => g.status === "Open").length;
+  const hooIssued = RETIREES.filter((r) => r.ppo).length;
+
+  const heading = isPensioner ? "Pensioner Dashboard" : isHOO ? "Head of Office" : "Role Dashboard";
+  const welcome = isPensioner ? PENSIONER.name : isHOO ? HOO_OFFICE.officer : role.label;
 
   return (
     <Screen className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
         <div>
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-saffron">
-            <span className="h-px w-5 bg-saffron" /> {isPensioner ? "Pensioner Dashboard" : "Role Dashboard"}
+            <span className="h-px w-5 bg-saffron" /> {heading}
           </span>
-          <h1 className="mt-1 text-2xl font-black tracking-tight text-foreground sm:text-3xl">
-            Welcome, {isPensioner ? PENSIONER.name : role.label}
-          </h1>
+          <h1 className="mt-1 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Welcome, {welcome}</h1>
           {isPensioner && <p className="text-sm text-muted-foreground">{PENSIONER.ppo} &middot; {PENSIONER.ministry}</p>}
+          {isHOO && <p className="text-sm text-muted-foreground">{HOO_OFFICE.office} &middot; {HOO_OFFICE.code}</p>}
         </div>
         <div className="flex items-center gap-2.5">
           {isPensioner && (
@@ -72,13 +83,9 @@ export default function Dashboard({ roleId, onLogout }) {
             <KPI label="Life certificate" value={DLC_STATUS.current} sub={"Valid till " + DLC_STATUS.validTill} icon="fingerprint" tone="saffron" />
             <KPI label="Open grievances" value={openGriev} sub={openGriev ? "In progress" : "None pending"} icon="messageCircle" tone="primary" />
           </div>
-
           {!ppoGenerated && (
-            <motion.button
-              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-              onClick={() => setActive("form6a")}
-              className="card-shimmer mt-6 flex w-full items-center justify-between gap-4 rounded-xl2 border-2 border-saffron/40 bg-gradient-to-r from-saffron/12 to-transparent p-5 text-left shadow-card transition-shadow hover:shadow-elegant"
-            >
+            <motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} onClick={() => setActive("form6a")}
+              className="card-shimmer mt-6 flex w-full items-center justify-between gap-4 rounded-xl2 border-2 border-saffron/40 bg-gradient-to-r from-saffron/12 to-transparent p-5 text-left shadow-card transition-shadow hover:shadow-elegant">
               <div className="flex items-center gap-3.5">
                 <span className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-saffron to-saffron-light text-saffron-foreground shadow-soft"><Icon name="fileText" size={24} /></span>
                 <div>
@@ -89,20 +96,29 @@ export default function Dashboard({ roleId, onLogout }) {
               <span className="inline-flex items-center gap-1 text-sm font-bold text-saffron">Open <Icon name="arrowRight" size={15} /></span>
             </motion.button>
           )}
-
+          <h2 className="mt-8 text-sm font-bold uppercase tracking-wider text-muted-foreground">Your services</h2>
+        </>
+      ) : isHOO ? (
+        <>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <KPI label="Retiring cases" value={hooRetiring} sub="in pipeline" icon="briefcase" tone="primary" />
+            <KPI label="Awaiting PPO" value={hooAwaitPPO} sub="with PAO" icon="badgeCheck" tone="saffron" />
+            <KPI label="Office grievances" value={hooGriev} sub={hooGriev ? "open" : "none open"} icon="messageCircle" tone="primary" />
+            <KPI label="PPOs issued" value={hooIssued} sub="this year" icon="check" tone="success" />
+          </div>
           <h2 className="mt-8 text-sm font-bold uppercase tracking-wider text-muted-foreground">Your services</h2>
         </>
       ) : (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-5 flex items-start gap-2.5 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-foreground">
           <Icon name="shieldCheck" size={18} className="mt-0.5 flex-shrink-0 text-primary" />
-          <span>RBAC active &mdash; you are seeing <b>{role.modules.length}</b> service{role.modules.length > 1 ? "s" : ""} authorised for the <b>{role.label}</b> role. The Pensioner journey is fully built; other roles are next.</span>
+          <span>RBAC active &mdash; you are seeing <b>{role.modules.length}</b> service{role.modules.length > 1 ? "s" : ""} authorised for the <b>{role.label}</b> role. The Pensioner and Head of Office journeys are fully built; other roles are next.</span>
         </motion.div>
       )}
 
       <motion.div variants={container} initial="hidden" animate="show" className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {role.modules.map((m) => {
           const mo = MODULES[m] || { label: m, icon: "badgeCheck", desc: "" };
-          const live = isPensioner && !!getPensionerModule(m);
+          const live = !!moduleFor(m);
           return (
             <motion.button key={m} variants={item} onClick={() => openTile(m)} whileHover={{ y: -6 }} whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
