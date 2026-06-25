@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  * {
+    @apply border-border;
+  }
+}
+
+@layer components {
+  /* soft gradient mesh used behind the portal journey */
+  .mesh-bg {
+    background-image:
+      radial-gradient(55rem 38rem at 8% -12%, rgba(233, 138, 30, 0.20), transparent 60%),
+      radial-gradient(52rem 44rem at 108% -6%, rgba(46, 90, 168, 0.26), transparent 55%),
+      radial-gradient(48rem 40rem at 92% 116%, rgba(27, 156, 87, 0.16), transparent 60%),
+      linear-gradient(180deg, #f5f8fd, #eef3fb);
+  }
+  .dot-grid {
+    background-image: radial-gradient(rgba(27, 58, 107, 0.16) 1px, transparent 1px);
+    background-size: 26px 26px;
+    -webkit-mask-image: linear-gradient(180deg, #000, transparent 72%);
+    mask-image: linear-gradient(180deg, #000, transparent 72%);
+  }
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .text-gradient {
+    background: linear-gradient(120deg, #1b3a6b, #2e5aa8 55%, #e98a1e);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .btn-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  }
+  .btn-shimmer:hover::after {
+    animation: shimmer 0.9s ease;
+  }
+}
+
+/* nicer scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #c5d2e6;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #aebfdb;
+}

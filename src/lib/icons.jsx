@@ -1,0 +1,49 @@
+import {
+  ShieldCheck, Users, Briefcase, BadgeCheck, FileText, UserCheck,
+  MessageSquare, Fingerprint, Database, Calculator, BookOpen, HeartHandshake,
+  Repeat, Activity, FileCheck2, ArrowUpRight, Scale, BookMarked, Check, Info,
+  ChevronRight, ChevronLeft, ArrowRight, LogIn, X, ListChecks, Menu, Phone, Mail,
+  MapPin, Building2, Landmark, ShieldQuestion, Sparkles,
+} from "lucide-react";
+
+const MAP = {
+  shieldCheck: ShieldCheck,
+  users: Users,
+  briefcase: Briefcase,
+  badgeCheck: BadgeCheck,
+  fileText: FileText,
+  userCheck: UserCheck,
+  messageCircle: MessageSquare,
+  fingerprint: Fingerprint,
+  database: Database,
+  calculator: Calculator,
+  bookOpen: BookOpen,
+  heartHandshake: HeartHandshake,
+  repeat: Repeat,
+  activity: Activity,
+  fileCheck: FileCheck2,
+  arrowUpRight: ArrowUpRight,
+  scale: Scale,
+  bookMarked: BookMarked,
+  check: Check,
+  info: Info,
+  chevronRight: ChevronRight,
+  chevronLeft: ChevronLeft,
+  arrowRight: ArrowRight,
+  login: LogIn,
+  x: X,
+  listChecks: ListChecks,
+  menu: Menu,
+  phone: Phone,
+  mail: Mail,
+  mapPin: MapPin,
+  building: Building2,
+  landmark: Landmark,
+  shieldQuestion: ShieldQuestion,
+  sparkles: Sparkles,
+};
+
+export default function Icon({ name, size = 20, className = "", strokeWidth = 2, ...rest }) {
+  const Cmp = MAP[name] || BadgeCheck;
+  return <Cmp size={size} className={className} strokeWidth={strokeWidth} {...rest} />;
+}
