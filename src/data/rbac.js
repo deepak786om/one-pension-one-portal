@@ -17,6 +17,11 @@ export const MODULES = {
   pension_revision: { label: "Pension Revision", icon: "repeat", desc: "Revise pension on pay-commission / restoration and forward to PAO." },
   hoo_utility: { label: "Utilities", icon: "database", desc: "Download ePPO / eSSA, identity card, undertakings and manual PPO." },
   pension_sanction: { label: "Pension Sanction & PPO", icon: "badgeCheck", desc: "Compute, sanction and issue the PPO." },
+  pao_workbench: { label: "Sanction & Issue PPO", icon: "badgeCheck", desc: "Scrutinise HOO cases, raise objections and issue the e-PPO." },
+  pao_revision: { label: "Revision Authorities", icon: "repeat", desc: "Issue revised pension authorities on CPC / restoration." },
+  ddo_cases: { label: "My Forwarded Cases", icon: "arrowUpRight", desc: "Track retiree cases forwarded to the Head of Office." },
+  hod_anubhav: { label: "Anubhav Recommendations", icon: "bookOpen", desc: "Recommend and publish service experiences." },
+  assoc_members: { label: "Member Registry", icon: "users", desc: "Maintain your association's member list." },
   compact_export: { label: "Export to COMPACT", icon: "database", desc: "Generate XML for CPAO / COMPACT." },
   retiree_records: { label: "Maintain Retiree Records", icon: "fileText", desc: "Add and update retiree details." },
   eis_import: { label: "Import from EIS", icon: "repeat", desc: "Pull employee data from EIS / HRMS." },
@@ -75,17 +80,17 @@ export const ROLES = [
   {
     id: "PAO", label: "Pay & Accounts Officer (PAO)", icon: "badgeCheck", group: "Government Officials",
     authTitle: "Parichay (GoI SSO)", authFields: parichay,
-    modules: ["pension_sanction", "compact_export", "dept_reports"], reg: officialReg,
+    modules: ["pao_workbench", "pao_revision", "compact_export", "dept_reports"], reg: officialReg,
   },
   {
     id: "DDO", label: "Drawing & Disbursing Officer (DDO)", icon: "fileText", group: "Government Officials",
     authTitle: "Parichay (GoI SSO)", authFields: parichay,
-    modules: ["retiree_records", "eis_import", "dept_reports"], reg: officialReg,
+    modules: ["retiree_records", "eis_import", "ddo_cases", "dept_reports"], reg: officialReg,
   },
   {
     id: "HOD", label: "Head of Department (HOD)", icon: "shieldCheck", group: "Government Officials",
     authTitle: "Parichay (GoI SSO)", authFields: parichay,
-    modules: ["dept_reports", "hoo_grievance"], reg: officialReg,
+    modules: ["dept_reports", "hod_anubhav", "hoo_grievance"], reg: officialReg,
   },
   {
     id: "NODAL", label: "Nodal Officer", icon: "userCheck", group: "Government Officials",
@@ -110,7 +115,7 @@ export const ROLES = [
   {
     id: "ASSOCIATION", label: "Pensioners' Association", icon: "users", group: "Grievance & Campaign",
     authTitle: "Username + Password + CAPTCHA", authFields: [["Username", "text"], ["Password", "password"], ["CAPTCHA", "text"]],
-    modules: ["lodge_on_behalf", "assoc_dashboard"],
+    modules: ["assoc_dashboard", "lodge_on_behalf", "assoc_members"],
     reg: reg(
       [["Association Name", "text", true], ["Registration Number", "text", true], ["Nodal Officer Name", "text", true], ["Official Contact Email", "email", true], ["Mobile Number", "tel", true], ["Upload Recognition Document", "file", true]],
       ["Mobile OTP", "Recognition document upload"],

@@ -5,10 +5,8 @@ import Button from "../components/ui/Button.jsx";
 import { Screen } from "../components/PortalShell.jsx";
 import { getRole, MODULES } from "../data/rbac.js";
 import { KPI, StatusPill } from "../components/ui/kit.jsx";
-import { getPensionerModule } from "./pensioner/index.jsx";
-import { getHooModule } from "./hoo/index.jsx";
+import { getModuleForRole, roleHeader, roleSummary } from "./registry.js";
 import { PENSIONER, PAYMENTS, GRIEVANCES, DLC_STATUS, FORM6A } from "../data/pensioner.js";
-import { HOO_OFFICE, RETIREES, HOO_GRIEVANCES } from "../data/hoo.js";
 import { formatINR } from "../lib/pension.js";
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
@@ -17,8 +15,7 @@ const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
 export default function Dashboard({ roleId, onLogout }) {
   const role = getRole(roleId);
   const isPensioner = role.id === "PENSIONER";
-  const isHOO = role.id === "HOO";
-  const moduleFor = (key) => (isPensioner ? getPensionerModule(key) : isHOO ? getHooModule(key) : null);
+  const moduleFor = (key) => getModuleForRole(role.id, key);
 
   const [active, setActive] = useState(null);
   const [toast, setToast] = useState("");
@@ -43,13 +40,11 @@ export default function Dashboard({ roleId, onLogout }) {
 
   const openGriev = GRIEVANCES.filter((g) => g.status !== "Resolved").length;
   const estPension = Math.round(PENSIONER.basicPension * (1 + PENSIONER.drPercent / 100));
-  const hooRetiring = RETIREES.filter((r) => r.stage < 6).length;
-  const hooAwaitPPO = RETIREES.filter((r) => !r.ppo && r.stage >= 4).length;
-  const hooGriev = HOO_GRIEVANCES.filter((g) => g.status === "Open").length;
-  const hooIssued = RETIREES.filter((r) => r.ppo).length;
+  const header = isPensioner ? null : roleHeader(role.id);
+  const summary = isPensioner ? null : roleSummary(role.id);
 
-  const heading = isPensioner ? "Pensioner Dashboard" : isHOO ? "Head of Office" : "Role Dashboard";
-  const welcome = isPensioner ? PENSIONER.name : isHOO ? HOO_OFFICE.officer : role.label;
+  const heading = isPensioner ? "Pensioner Dashboard" : role.label;
+  const welcome = isPensioner ? PENSIONER.name : (header ? header.welcome : role.label);
 
   return (
     <Screen className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -60,7 +55,7 @@ export default function Dashboard({ roleId, onLogout }) {
           </span>
           <h1 className="mt-1 text-2xl font-black tracking-tight text-foreground sm:text-3xl">Welcome, {welcome}</h1>
           {isPensioner && <p className="text-sm text-muted-foreground">{PENSIONER.ppo} &middot; {PENSIONER.ministry}</p>}
-          {isHOO && <p className="text-sm text-muted-foreground">{HOO_OFFICE.office} &middot; {HOO_OFFICE.code}</p>}
+          {!isPensioner && header && <p className="text-sm text-muted-foreground">{header.subtitle}</p>}
         </div>
         <div className="flex items-center gap-2.5">
           {isPensioner && (
@@ -108,21 +103,15 @@ export default function Dashboard({ roleId, onLogout }) {
           )}
           <h2 className="mt-8 text-sm font-bold uppercase tracking-wider text-muted-foreground">Your services</h2>
         </>
-      ) : isHOO ? (
+      ) : (
         <>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <KPI label="Retiring cases" value={hooRetiring} sub="in pipeline" icon="briefcase" tone="primary" />
-            <KPI label="Awaiting PPO" value={hooAwaitPPO} sub="with PAO" icon="badgeCheck" tone="saffron" />
-            <KPI label="Office grievances" value={hooGriev} sub={hooGriev ? "open" : "none open"} icon="messageCircle" tone="primary" />
-            <KPI label="PPOs issued" value={hooIssued} sub="this year" icon="check" tone="success" />
-          </div>
+          {summary && (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {summary.map((s) => <KPI key={s.label} label={s.label} value={s.value} sub={s.sub} icon={s.icon} tone={s.tone} />)}
+            </div>
+          )}
           <h2 className="mt-8 text-sm font-bold uppercase tracking-wider text-muted-foreground">Your services</h2>
         </>
-      ) : (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-5 flex items-start gap-2.5 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-foreground">
-          <Icon name="shieldCheck" size={18} className="mt-0.5 flex-shrink-0 text-primary" />
-          <span>RBAC active &mdash; you are seeing <b>{role.modules.length}</b> service{role.modules.length > 1 ? "s" : ""} authorised for the <b>{role.label}</b> role. The Pensioner and Head of Office journeys are fully built; other roles are next.</span>
-        </motion.div>
       )}
 
       <motion.div variants={container} initial="hidden" animate="show" className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
