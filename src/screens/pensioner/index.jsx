@@ -7,8 +7,9 @@ import Anubhav from "./Anubhav.jsx";
 import FamilyNominee from "./FamilyNominee.jsx";
 import TransferAccount from "./TransferAccount.jsx";
 import Profile from "./Profile.jsx";
+import Form6A from "./Form6A.jsx";
 
-// keys match ROLES.PENSIONER.modules in data/rbac.js (+ "profile")
+// keys match ROLES.PENSIONER.modules in data/rbac.js (+ "profile", "form6a")
 export const PENSIONER_MODULES = {
   ppo_view: PPOView,
   track_pension: TrackPension,
@@ -19,6 +20,7 @@ export const PENSIONER_MODULES = {
   family_update: FamilyNominee,
   account_transfer: TransferAccount,
   profile: Profile,
+  form6a: Form6A,
 };
 
 export function getPensionerModule(key) {

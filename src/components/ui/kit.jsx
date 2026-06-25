@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Icon from "../../lib/icons.jsx";
 import { cn } from "../../lib/cn.js";
 
@@ -21,19 +22,20 @@ export function StatusPill({ children, tone }) {
   return <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold", STATUS_TONES[t])}>{children}</span>;
 }
 
-// ---- KPI card ----
+// ---- KPI card (light gradient + sheen on hover) ----
 export function KPI({ label, value, sub, icon, tone = "primary" }) {
   const tones = {
-    primary: "from-primary to-primary-light",
-    saffron: "from-saffron to-saffron-light",
-    success: "from-success to-emerald-500",
+    primary: { bg: "from-primary/10 via-primary/[0.04] to-transparent", ring: "border-primary/15", chip: "from-primary to-primary-light" },
+    saffron: { bg: "from-saffron/15 via-saffron/[0.05] to-transparent", ring: "border-saffron/20", chip: "from-saffron to-saffron-light" },
+    success: { bg: "from-success/12 via-success/[0.04] to-transparent", ring: "border-success/20", chip: "from-success to-emerald-500" },
   };
+  const t = tones[tone] || tones.primary;
   return (
-    <div className="rounded-xl2 border border-border bg-card p-4 shadow-card">
+    <div className={cn("card-shimmer rounded-xl2 border bg-gradient-to-br p-4 shadow-card transition-shadow hover:shadow-elegant", t.bg, t.ring)}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
         {icon && (
-          <span className={cn("grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br text-white", tones[tone])}>
+          <span className={cn("grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br text-white shadow-soft", t.chip)}>
             <Icon name={icon} size={16} />
           </span>
         )}
@@ -189,5 +191,143 @@ export function SuccessNote({ title, children }) {
         </div>
       </div>
     </motion.div>
+  );
+}
+
+// ---- breadcrumb ----
+export function Breadcrumb({ items }) {
+  return (
+    <nav className="flex flex-wrap items-center gap-1.5 text-sm">
+      {items.map((it, i) => {
+        const last = i === items.length - 1;
+        return (
+          <span key={i} className="flex items-center gap-1.5">
+            {it.onClick && !last ? (
+              <button onClick={it.onClick} className="font-medium text-muted-foreground transition-colors hover:text-primary">{it.label}</button>
+            ) : (
+              <span className={last ? "font-semibold text-foreground" : "text-muted-foreground"}>{it.label}</span>
+            )}
+            {!last && <Icon name="chevronRight" size={14} className="text-muted-foreground/50" />}
+          </span>
+        );
+      })}
+    </nav>
+  );
+}
+
+// ---- radio pills ----
+export function RadioPills({ options, value, onChange, name }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((o) => {
+        const v = typeof o === "string" ? o : o.value;
+        const l = typeof o === "string" ? o : o.label;
+        const on = value === v;
+        return (
+          <button
+            key={v}
+            type="button"
+            onClick={() => onChange(v)}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm font-semibold transition-colors",
+              on ? "border-primary bg-primary/8 text-primary" : "border-border bg-white text-muted-foreground hover:border-primary/40"
+            )}
+          >
+            <span className={cn("grid h-4 w-4 place-items-center rounded-full border-2", on ? "border-primary" : "border-muted-foreground/40")}>
+              {on && <span className="h-2 w-2 rounded-full bg-primary" />}
+            </span>
+            {l}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---- animated star rating ----
+const STAR_LABELS = ["", "Poor", "Fair", "Good", "Better", "Excellent"];
+export function StarRating({ value = 0, onChange }) {
+  const [hover, setHover] = useState(0);
+  const shown = hover || value;
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="flex items-center gap-1.5">
+        {[1, 2, 3, 4, 5].map((n) => {
+          const active = n <= shown;
+          return (
+            <motion.button
+              key={n}
+              type="button"
+              onMouseEnter={() => setHover(n)}
+              onMouseLeave={() => setHover(0)}
+              onClick={() => onChange && onChange(n)}
+              whileHover={{ scale: 1.25 }}
+              whileTap={{ scale: 0.9 }}
+              animate={active ? { scale: [1, 1.15, 1] } : { scale: 1 }}
+              transition={{ duration: 0.2 }}
+              className="text-3xl leading-none"
+              aria-label={`${n} star`}
+            >
+              <span className={active ? "text-saffron drop-shadow-sm" : "text-muted-foreground/30"}>★</span>
+            </motion.button>
+          );
+        })}
+      </div>
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={shown}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          className="text-sm font-bold text-foreground"
+        >
+          {shown ? STAR_LABELS[shown] : "Tap to rate"}
+        </motion.span>
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ---- modal / popup ----
+export function Modal({ open, onClose, children, maxW = "max-w-md" }) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 z-50 grid place-items-center bg-foreground/50 p-4 backdrop-blur-sm"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ type: "spring", stiffness: 280, damping: 24 }}
+            onClick={(e) => e.stopPropagation()}
+            className={cn("relative w-full rounded-2xl bg-card p-6 shadow-elegant", maxW)}
+          >
+            <button onClick={onClose} className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted">
+              <Icon name="x" size={16} />
+            </button>
+            {children}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ---- DigiLocker mark (brand-style representation) ----
+export function DigiLockerLogo({ size = 18 }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden>
+        <rect width="32" height="32" rx="7" fill="#1B4AA0" />
+        <path d="M16 7l7 3v5c0 4.4-3 7.8-7 9-4-1.2-7-4.6-7-9v-5l7-3z" fill="#fff" />
+        <rect x="12.5" y="15" width="7" height="6" rx="1.2" fill="#1B4AA0" />
+        <path d="M13.6 15v-1.4a2.4 2.4 0 014.8 0V15" stroke="#1B4AA0" strokeWidth="1.3" fill="none" />
+      </svg>
+      <span className="text-sm font-bold text-[#1B4AA0]">DigiLocker</span>
+    </span>
   );
 }

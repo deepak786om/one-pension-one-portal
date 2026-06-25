@@ -57,6 +57,37 @@
   .btn-shimmer:hover::after {
     animation: shimmer 0.9s ease;
   }
+  /* sheen that sweeps across a card on hover */
+  .card-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .card-shimmer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 65%;
+    transform: translateX(-160%) skewX(-18deg);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .card-shimmer:hover::before {
+    animation: cardSheen 0.95s ease;
+  }
+}
+
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes cardSheen {
+  to {
+    transform: translateX(220%) skewX(-18deg);
+  }
 }
 
 /* nicer scrollbar */
