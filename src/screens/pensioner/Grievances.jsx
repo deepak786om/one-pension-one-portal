@@ -22,22 +22,33 @@ function iconForAction(a = "") {
 }
 
 function HistoryTimeline({ items, accent = "primary" }) {
+  const dot = accent === "saffron" ? "bg-saffron" : "bg-primary";
   return (
-    <ol className="relative ml-3 border-l-2 border-border">
-      {items.map((h, i) => (
-        <li key={i} className="mb-4 ml-5 last:mb-0">
-          <span className={"absolute -left-[0.65rem] grid h-5 w-5 place-items-center rounded-full text-white ring-4 ring-card " + (accent === "saffron" ? "bg-saffron" : "bg-primary")}>
-            <Icon name={iconForAction(h.action)} size={11} />
-          </span>
-          <div className="flex flex-wrap items-center gap-x-2">
-            <span className="text-sm font-bold text-foreground">{h.action}</span>
-            <span className="text-[11px] text-muted-foreground">· {h.date}</span>
+    <div className="space-y-1">
+      {items.map((h, i) => {
+        const actorIcon = /^you/i.test(h.actor) ? "userCheck" : "building";
+        return (
+          <div key={i} className="flex gap-4">
+            <div className="flex flex-col items-center">
+              <span className={"grid h-11 w-11 flex-shrink-0 place-items-center rounded-full text-white shadow-soft ring-4 ring-card " + dot}>
+                <Icon name={iconForAction(h.action)} size={16} />
+              </span>
+              {i < items.length - 1 && <span className="my-1 w-0.5 flex-1 bg-border" />}
+            </div>
+            <div className="mb-2 flex-1 rounded-xl2 border border-border bg-card p-4 shadow-card transition-shadow hover:shadow-elegant">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <h4 className="text-sm font-extrabold text-foreground">{h.action}</h4>
+                <span className="rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground">{h.date}</span>
+              </div>
+              <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-primary">
+                <Icon name={actorIcon} size={12} /> {h.actor}
+              </div>
+              {h.remark && <p className="mt-2.5 rounded-lg bg-muted/40 p-3 text-sm leading-relaxed text-muted-foreground">{h.remark}</p>}
+            </div>
           </div>
-          <div className="text-xs font-medium text-primary">{h.actor}</div>
-          {h.remark && <p className="mt-0.5 text-xs text-muted-foreground">{h.remark}</p>}
-        </li>
-      ))}
-    </ol>
+        );
+      })}
+    </div>
   );
 }
 

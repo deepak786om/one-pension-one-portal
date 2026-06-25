@@ -42,6 +42,7 @@ export default function Dashboard({ roleId, onLogout }) {
   }
 
   const openGriev = GRIEVANCES.filter((g) => g.status !== "Resolved").length;
+  const estPension = Math.round(PENSIONER.basicPension * (1 + PENSIONER.drPercent / 100));
   const hooRetiring = RETIREES.filter((r) => r.stage < 6).length;
   const hooAwaitPPO = RETIREES.filter((r) => !r.ppo && r.stage >= 4).length;
   const hooGriev = HOO_GRIEVANCES.filter((g) => g.status === "Open").length;
@@ -77,12 +78,21 @@ export default function Dashboard({ roleId, onLogout }) {
 
       {isPensioner ? (
         <>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <KPI label="Pension" value={<StatusPill>Active</StatusPill>} sub="Disbursed monthly" icon="badgeCheck" tone="success" />
-            <KPI label="Last credited" value={formatINR(PAYMENTS[0].gross)} sub={PAYMENTS[0].credited} icon="activity" tone="primary" />
-            <KPI label="Life certificate" value={DLC_STATUS.current} sub={"Valid till " + DLC_STATUS.validTill} icon="fingerprint" tone="saffron" />
-            <KPI label="Open grievances" value={openGriev} sub={openGriev ? "In progress" : "None pending"} icon="messageCircle" tone="primary" />
-          </div>
+          {ppoGenerated ? (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <KPI label="Pension" value={<StatusPill>Active</StatusPill>} sub="Disbursed monthly" icon="badgeCheck" tone="success" />
+              <KPI label="Last credited" value={formatINR(PAYMENTS[0].gross)} sub={PAYMENTS[0].credited} icon="activity" tone="primary" />
+              <KPI label="Life certificate" value={DLC_STATUS.current} sub={"Valid till " + DLC_STATUS.validTill} icon="fingerprint" tone="saffron" />
+              <KPI label="Open grievances" value={openGriev} sub={openGriev ? "In progress" : "None pending"} icon="messageCircle" tone="primary" />
+            </div>
+          ) : (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <KPI label="Pension status" value={<StatusPill tone="warn">Awaiting PPO</StatusPill>} sub="Application in progress" icon="activity" tone="primary" />
+              <KPI label="Form 6A" value="Pending" sub={"Due " + FORM6A.deadline} icon="fileText" tone="saffron" />
+              <KPI label="Est. monthly pension" value={formatINR(estPension)} sub="incl. DR, after retirement" icon="badgeCheck" tone="success" />
+              <KPI label="Open grievances" value={openGriev} sub={openGriev ? "In progress" : "None pending"} icon="messageCircle" tone="primary" />
+            </div>
+          )}
           {!ppoGenerated && (
             <motion.button initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} onClick={() => setActive("form6a")}
               className="card-shimmer mt-6 flex w-full items-center justify-between gap-4 rounded-xl2 border-2 border-saffron/40 bg-gradient-to-r from-saffron/12 to-transparent p-5 text-left shadow-card transition-shadow hover:shadow-elegant">

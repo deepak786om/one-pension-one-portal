@@ -3,7 +3,7 @@ import {
   MessageSquare, Fingerprint, Database, Calculator, BookOpen, HeartHandshake,
   Repeat, Activity, FileCheck2, ArrowUpRight, Scale, BookMarked, Check, Info,
   ChevronRight, ChevronLeft, ArrowRight, LogIn, X, ListChecks, Menu, Phone, Mail,
-  MapPin, Building2, Landmark, ShieldQuestion, Sparkles,
+  MapPin, Building2, Landmark, ShieldQuestion, Sparkles, ScanFace, Eye, Download,
 } from "lucide-react";
 
 const MAP = {
@@ -41,6 +41,9 @@ const MAP = {
   landmark: Landmark,
   shieldQuestion: ShieldQuestion,
   sparkles: Sparkles,
+  scanFace: ScanFace,
+  eye: Eye,
+  download: Download,
 };
 
 export default function Icon({ name, size = 20, className = "", strokeWidth = 2, ...rest }) {

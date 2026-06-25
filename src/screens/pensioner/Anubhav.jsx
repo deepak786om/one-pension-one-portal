@@ -18,22 +18,69 @@ function IdentityBanner() {
 
 export default function Anubhav({ onBack }) {
   const [submitted, setSubmitted] = useState(ANUBHAV.submitted);
+  const [data, setData] = useState(null); // snapshot shown after submit
   const [form, setForm] = useState({ category: "", content: "", innovation: "", award: "", leadership: "", suggestions: "", volunteer: "", feedbackEmail: "" });
   const [skills, setSkills] = useState([]);
   const [accept, setAccept] = useState(false);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const toggleSkill = (s) => setSkills((arr) => arr.includes(s) ? arr.filter((x) => x !== s) : [...arr, s]);
-  const valid = form.category && form.content.trim().length > 40 && accept;
+
+  // declaration-gated: needs a category, some content, and the declaration accepted
+  const valid = !!form.category && form.content.trim().length > 0 && accept;
+
+  const submit = () => {
+    setData({
+      ...form,
+      skills: [...skills],
+      ref: "ANB-2026-" + Math.floor(1000 + Math.random() * 8999),
+      date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+    });
+    setSubmitted(true);
+  };
 
   if (submitted) {
+    const d = data || { category: "Government process re-engineering", content: "Your write-up has been recorded and forwarded to your Head of Office.", skills: [], ref: "ANB-2026-0000", date: "Today" };
     return (
       <ModuleShell icon="bookOpen" title="Anubhav — Your Experience" desc="Your service experience, submitted to the National Anubhav Awards Scheme." onBack={onBack}>
         <SectionCard title="Your Anubhav write-up" icon="bookMarked"
           action={<span className="inline-flex items-center gap-1.5 rounded-full bg-success/12 px-3 py-1 text-xs font-bold text-success"><Icon name="badgeCheck" size={14} /> Submitted</span>}>
-          <InfoRow label="Category of work" value={form.category || "Government process re-engineering"} />
-          <InfoRow label="Status" value={<StatusPill>Submitted to HOO</StatusPill>} />
-          <div className="mt-3 rounded-xl bg-muted/30 p-3.5 text-sm text-foreground">{form.content || "Your write-up has been recorded and forwarded to your Head of Office for grading."}</div>
-          <p className="mt-3 text-xs text-muted-foreground"><Icon name="info" size={12} className="mr-1 inline text-primary" /> Only one write-up is allowed per retirement. Once your HOO recommends it, the HOD publishes it on the Anubhav portal.</p>
+          <div className="grid gap-x-8 sm:grid-cols-2">
+            <InfoRow label="Reference" value={<span className="font-mono">{d.ref}</span>} />
+            <InfoRow label="Submitted on" value={d.date} />
+            <InfoRow label="Category of work" value={d.category} />
+            <InfoRow label="Status" value={<StatusPill>Forwarded to HOO</StatusPill>} />
+          </div>
+
+          <div className="mt-4">
+            <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Your Anubhav</div>
+            <p className="mt-1.5 whitespace-pre-line rounded-xl bg-muted/30 p-3.5 text-sm leading-relaxed text-foreground">{d.content}</p>
+          </div>
+
+          {(d.innovation || d.award || d.leadership) && (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {d.innovation && <div className="rounded-xl border border-border p-3"><div className="text-xs font-bold text-primary">Innovation / exceptional work</div><p className="mt-1 text-sm text-muted-foreground">{d.innovation}</p></div>}
+              {d.award && <div className="rounded-xl border border-border p-3"><div className="text-xs font-bold text-primary">Awards / medals</div><p className="mt-1 text-sm text-muted-foreground">{d.award}</p></div>}
+              {d.leadership && <div className="rounded-xl border border-border p-3"><div className="text-xs font-bold text-primary">Leadership qualities</div><p className="mt-1 text-sm text-muted-foreground">{d.leadership}</p></div>}
+            </div>
+          )}
+
+          {d.skills && d.skills.length > 0 && (
+            <div className="mt-4">
+              <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Skills</div>
+              <div className="mt-1.5 flex flex-wrap gap-2">
+                {d.skills.map((s) => <span key={s} className="rounded-full bg-primary/8 px-3 py-1 text-xs font-semibold text-primary">{s}</span>)}
+              </div>
+            </div>
+          )}
+
+          {d.suggestions && (
+            <div className="mt-4">
+              <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Suggestions</div>
+              <p className="mt-1.5 rounded-xl bg-muted/30 p-3.5 text-sm text-foreground">{d.suggestions}</p>
+            </div>
+          )}
+
+          <p className="mt-4 text-xs text-muted-foreground"><Icon name="info" size={12} className="mr-1 inline text-primary" /> Only one write-up is allowed per retirement. Once your HOO recommends it, the HOD publishes it on the Anubhav portal.</p>
         </SectionCard>
       </ModuleShell>
     );
@@ -83,14 +130,14 @@ export default function Anubhav({ onBack }) {
             <input type="file" accept=".jpg,.jpeg" className="w-full rounded-xl border border-border bg-white px-3 py-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary" />
           </Field>
 
-          <label className="flex items-start gap-2.5 rounded-xl bg-muted/30 p-3.5 text-xs text-foreground">
+          <label className={cn("flex items-start gap-2.5 rounded-xl p-3.5 text-xs text-foreground transition-colors", accept ? "bg-success/8 ring-1 ring-success/25" : "bg-muted/30")}>
             <input type="checkbox" checked={accept} onChange={(e) => setAccept(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#1B3A6B]" />
             <span>I declare the information is true, not sensitive to national security, not against any gender/caste/religion, not political, and does not disclose my identity or violate the Official Secrets Act, 1923. <b className="text-foreground">I Accept.</b></span>
           </label>
 
           <div className="flex gap-2">
-            <Button variant="saffron" disabled={!valid} onClick={() => setSubmitted(true)}>
-              <Icon name="arrowRight" size={16} /> {valid ? "Submit write-up" : "Complete the required fields"}
+            <Button variant="saffron" disabled={!valid} onClick={submit}>
+              <Icon name="arrowRight" size={16} /> {accept ? "Submit write-up" : "Accept the declaration to submit"}
             </Button>
             <Button variant="outline" onClick={onBack}>Cancel</Button>
           </div>

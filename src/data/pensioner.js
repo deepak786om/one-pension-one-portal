@@ -69,9 +69,9 @@ export const PAYMENTS = [
 
 // ---- DLC ----
 export const DLC_METHODS = [
-  { key: "face", title: "Face Authentication", sub: "Scan your face in the One Pension app", icon: "fingerprint" },
+  { key: "face", title: "Face Authentication", sub: "Scan your face in the One Pension app", icon: "scanFace" },
   { key: "finger", title: "Fingerprint", sub: "Use a registered biometric device", icon: "fingerprint" },
-  { key: "iris", title: "IRIS Scan", sub: "Use a registered IRIS device", icon: "fingerprint" },
+  { key: "iris", title: "IRIS Scan", sub: "Use a registered IRIS device", icon: "eye" },
 ];
 export const DLC_HISTORY = [
   { year: "2025", date: "14 Nov 2025", mode: "Face Authentication", id: "JP-2025-9087-2231", status: "Submitted" },
