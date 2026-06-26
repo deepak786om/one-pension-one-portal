@@ -3,7 +3,7 @@ import ModuleShell from "../pensioner/ModuleShell.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Icon from "../../lib/icons.jsx";
 import { SectionCard, StatusPill, StepList, EvidenceChecklist, InfoRow, SuccessNote, Breadcrumb, Modal, Field, Input } from "../../components/ui/kit.jsx";
-import { FAMILY_CASES, newPPO, eligEvidence, docsEvidence, sanctionEvidence } from "../../data/hoo.js";
+import { FAMILY_CASES, newPPO, eligEvidence, docsEvidence, sanctionEvidence, beneficiaryRows } from "../../data/hoo.js";
 import { formatINR } from "../../lib/pension.js";
 
 const KIND_TONE = { "In-Service Death": "warn", "Death after retirement": "info", "EOP / EOFP": "ok" };
@@ -64,11 +64,11 @@ export default function FamilyPension({ onBack }) {
   // ----- COMPUTATION TASK PAGE -----
   if (view.name === "task" && sel && view.task === "calc") {
     const fp = computeFP(sel);
+    const bene = beneficiaryRows(sel);
     const items = [
       { key: "rate", label: "Rate & period correct",
         data: [["Normal rate", "30% = " + formatINR(fp.normal)], ["Enhanced rate", "50% = " + formatINR(fp.enhanced)], ["Enhanced period", fp.periodShort], ["Dearness Relief", fp.dr + "%"]] },
-      { key: "bank", label: "Beneficiary bank details enclosed",
-        data: [["Bank", "State Bank of India"], ["Account", "XXXXXX2210"], ["IFSC", "SBIN0001234"], ["Penny-drop", "Name matched"]] },
+      { key: "bank", label: "Beneficiary bank details enclosed", data: bene },
       sel.kind === "In-Service Death"
         ? { key: "grat", label: "Death gratuity computed", data: [["Death gratuity", formatINR(fp.gratuity)], ["Qualifying service", `${sel.qualifyingYears} years`], ["Ceiling", "₹25,00,000"]], flag: "Within ceiling", flagTone: "ok" }
         : { key: "grat", label: "Arrears computed", data: [["Death gratuity", "N.A. (post-retirement)"], ["Arrears from", sel.dol], ["Computed to", "date of sanction"]] },
@@ -82,7 +82,10 @@ export default function FamilyPension({ onBack }) {
           <div className="grid gap-x-8 sm:grid-cols-2">{fp.rows.map(([l, v]) => <InfoRow key={l} label={l} value={v} />)}</div>
           <p className="mt-3 rounded-lg bg-saffron/10 p-2.5 text-xs font-medium text-saffron">{fp.period}</p>
         </div>
-        <SectionCard title="Confirm before forwarding" desc="Confirm each item against the computed figures shown." icon="fileCheck">
+        <SectionCard title="Beneficiary & bank details" desc="Pulled from the verified claim — the basis for the bank confirmation below." icon="userCheck">
+          <div className="grid gap-x-8 sm:grid-cols-2">{bene.map(([l, v]) => <InfoRow key={l} label={l} value={v} />)}</div>
+        </SectionCard>
+        <SectionCard title="Confirm before forwarding" desc="Each item shows the figures or particulars it is confirming — review, then confirm." icon="fileCheck">
           <EvidenceChecklist items={items} checked={checks} onToggle={(k) => setChecks((c) => c.includes(k) ? c.filter((x) => x !== k) : [...c, k])} />
           <Button variant="saffron" className="mt-4 w-full justify-center" disabled={!allDone} onClick={() => { set(sel.id, 4); setChecks([]); setView({ name: "case", id: sel.id }); say("Computation confirmed — ready to sanction."); }}>
             <Icon name="check" size={16} /> {allDone ? "Confirm computation" : "Confirm all items"}

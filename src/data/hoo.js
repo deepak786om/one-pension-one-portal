@@ -137,16 +137,31 @@ export const FAMILY_CASES = [
   { id: "F1", name: "Smt. Kamla Devi", deceased: "Late Shri R. K. Verma", relation: "Spouse", kind: "In-Service Death",
     dol: "12 Apr 2026", ppo: "", stage: "Documents under verification", quarter: "No",
     lastPay: 96000, qualifyingYears: 18, age: 54, deceasedDesig: "Section Officer",
+    aadhaar: "XXXX-XXXX-2210", bank: "State Bank of India — Pension Cell", account: "XXXXXX2210", ifsc: "SBIN0001234",
     note: "Family pension @30% + DA; enhanced rate (50%) for 10 years from death; death gratuity payable." },
   { id: "F2", name: "Master Aryan Singh (minor)", deceased: "Late Smt. Sunita Singh", relation: "Son (guardian: father)", kind: "Death after retirement",
     dol: "02 May 2026", ppo: "", stage: "Eligibility check", quarter: "No",
     lastPay: 72000, qualifyingYears: 0, age: 11, deceasedDesig: "Assistant (Retd.)",
+    aadhaar: "XXXX-XXXX-5521", bank: "Punjab National Bank", account: "XXXXXX5521", ifsc: "PUNB0123456",
     note: "Conversion from pension to family pension; enhanced rate for 7 years; guardian certificate required." },
   { id: "E1", name: "Smt. Reena Yadav", deceased: "Late Const. Mahesh Yadav", relation: "Spouse", kind: "EOP / EOFP",
     dol: "21 Mar 2026", ppo: "", stage: "Attributability under examination", quarter: "No",
     lastPay: 60000, qualifyingYears: 9, age: 41, deceasedDesig: "Constable",
+    aadhaar: "XXXX-XXXX-8841", bank: "Canara Bank", account: "XXXXXX8841", ifsc: "CNRB0004412",
     note: "Death attributable to government service — extraordinary family pension; Category-B/C examination." },
 ];
+
+// Beneficiary + bank details the HOO reviews before sanctioning a family pension.
+export function beneficiaryRows(c) {
+  return [
+    ["Claimant", `${c.name} (${c.relation})`],
+    ["Aadhaar", c.aadhaar],
+    ["Bank", c.bank],
+    ["Account", c.account],
+    ["IFSC", c.ifsc],
+    ["Penny-drop", "₹1 credited — name matched"],
+  ];
+}
 
 // Revision cases
 export const REVISION_CASES = [
@@ -285,7 +300,7 @@ export function docsEvidence(c) {
     { key: "idv", label: "Claimant identity / Aadhaar verified",
       data: [["Aadhaar", "XXXX-XXXX-7741"], ["Photograph", "Attached"], ["Match", "Verified"]] },
     { key: "bank", label: "Bank account & IFSC verified",
-      data: [["Bank", "State Bank of India"], ["Account", "XXXXXX2210"], ["IFSC", "SBIN0001234"], ["Penny-drop", "Name matched"]] },
+      data: [["Bank", c.bank], ["Account", c.account], ["IFSC", c.ifsc], ["Penny-drop", "Name matched"]] },
   ];
   if (c.relation.includes("Son") || c.relation.includes("minor")) items.push({ key: "guard", label: "Guardianship certificate (minor claimant)",
     data: [["Guardian", "Father"], ["Certificate", "Attached & attested"], ["Minor's age", `${c.age} years`]] });
