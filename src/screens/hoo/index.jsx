@@ -5,6 +5,7 @@ import PensionRevision from "./PensionRevision.jsx";
 import OfficeGrievances from "./OfficeGrievances.jsx";
 import HooUtilities from "./HooUtilities.jsx";
 import Reports from "./Reports.jsx";
+import HooAnubhav from "./HooAnubhav.jsx";
 
 export const HOO_MODULES = {
   case_workbench: CaseWorkbench,
@@ -12,6 +13,7 @@ export const HOO_MODULES = {
   family_pension: FamilyPension,
   pension_revision: PensionRevision,
   hoo_grievance: OfficeGrievances,
+  hoo_anubhav: HooAnubhav,
   hoo_utility: HooUtilities,
   dept_reports: Reports,
 };

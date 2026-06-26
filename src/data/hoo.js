@@ -1,4 +1,5 @@
 // Mock data for the Head of Office (HOO) journey.
+import { formatINR } from "../lib/pension.js";
 
 export const HOO_OFFICE = {
   officer: "Rajeev Menon",
@@ -135,13 +136,16 @@ export const RETIREES = [
 export const FAMILY_CASES = [
   { id: "F1", name: "Smt. Kamla Devi", deceased: "Late Shri R. K. Verma", relation: "Spouse", kind: "In-Service Death",
     dol: "12 Apr 2026", ppo: "", stage: "Documents under verification", quarter: "No",
-    note: "Family pension @30% + DA; enhanced rate for 10 years." },
+    lastPay: 96000, qualifyingYears: 18, age: 54, deceasedDesig: "Section Officer",
+    note: "Family pension @30% + DA; enhanced rate (50%) for 10 years from death; death gratuity payable." },
   { id: "F2", name: "Master Aryan Singh (minor)", deceased: "Late Smt. Sunita Singh", relation: "Son (guardian: father)", kind: "Death after retirement",
     dol: "02 May 2026", ppo: "", stage: "Eligibility check", quarter: "No",
-    note: "Conversion from pension to family pension; guardian certificate required." },
+    lastPay: 72000, qualifyingYears: 0, age: 11, deceasedDesig: "Assistant (Retd.)",
+    note: "Conversion from pension to family pension; enhanced rate for 7 years; guardian certificate required." },
   { id: "E1", name: "Smt. Reena Yadav", deceased: "Late Const. Mahesh Yadav", relation: "Spouse", kind: "EOP / EOFP",
     dol: "21 Mar 2026", ppo: "", stage: "Attributability under examination", quarter: "No",
-    note: "Death attributable to government service — extraordinary family pension." },
+    lastPay: 60000, qualifyingYears: 9, age: 41, deceasedDesig: "Constable",
+    note: "Death attributable to government service — extraordinary family pension; Category-B/C examination." },
 ];
 
 // Revision cases
@@ -174,3 +178,128 @@ export const REPORTS = {
 
 let CASE_SEQ = 101900;
 export function newPPO() { CASE_SEQ += Math.floor(Math.random() * 30) + 5; return `PPO-2026-DEL-0${CASE_SEQ}`; }
+
+// Build a full retiree profile (the pensioner's record the HOO can open from a case).
+export function retireeProfile(r) {
+  const dorYear = parseInt((r.dor.match(/\d{4}/) || ["2026"])[0], 10);
+  const joinYear = dorYear - r.qualifyingYears;
+  const last4 = (r.pan || "0000").replace(/\D/g, "").padStart(4, "0").slice(-4);
+  return {
+    personal: [
+      ["Name", r.name], ["PAN", r.pan], ["Aadhaar", `XXXX-XXXX-${last4}`],
+      ["Date of birth", `Born ${dorYear - 60} (superannuates at 60)`],
+      ["Mobile", "+91 9XXXXX" + last4], ["Email", r.name.toLowerCase().split(" ")[0] + "@example.gov.in"],
+    ],
+    service: [
+      ["Designation", `${r.designation} · ${r.level}`], ["Office", "NR — Personnel Branch"],
+      ["Date of joining", `c. ${joinYear}`], ["Date of retirement", r.dor],
+      ["Qualifying service", `${r.qualifyingYears} years`], ["Service Book no.", `SB/${r.id}/${joinYear}`],
+      ["Govt quarter", r.quarter === "Yes" ? "Yes — NDC required" : "No"], ["Case source", r.source],
+    ],
+    financial: [
+      ["Last emoluments", "₹" + r.emoluments.toLocaleString("en-IN")],
+      ["Bank", "State Bank of India — Pension Cell"], ["Account", "XXXXXX" + last4], ["IFSC", "SBIN0001234"],
+    ],
+    family: [
+      ["Spouse", r.name.startsWith("Mohd") ? "Mrs. A. Khan" : "Spouse on record"],
+      ["Nominee (LTA/gratuity)", "Spouse — 100%"], ["Disabled dependent", "None on record"],
+    ],
+  };
+}
+
+// ---------- evidence for verification checklists (what the HOO actually reviews) ----------
+
+function _meta(r) {
+  const dorYear = parseInt((r.dor.match(/\d{4}/) || ["2026"])[0], 10);
+  const last4 = (r.pan || "0000").replace(/\D/g, "").padStart(4, "0").slice(-4);
+  return { dorYear, joinYear: dorYear - r.qualifyingYears, dobYear: dorYear - 60, last4 };
+}
+
+// Service Book verification (Case Workbench → Verify Service Book)
+export function verifyEvidence(r) {
+  const m = _meta(r);
+  const items = [
+    { key: "id", label: "Identity & PAN confirmed against Service Book",
+      data: [["Name", r.name], ["PAN", r.pan], ["Date of birth", `${m.dobYear} (retires at 60)`], ["Designation", `${r.designation} · ${r.level}`]] },
+    { key: "qs", label: "Qualifying service computed — no unverified breaks",
+      data: [["Date of joining", `c. ${m.joinYear}`], ["Date of retirement", r.dor], ["Gross service", `${r.qualifyingYears} years`], ["Non-qualifying breaks", "Nil"], ["Net qualifying service", `${r.qualifyingYears} years`]],
+      flag: "No unverified breaks found", flagTone: "ok" },
+    { key: "sb", label: "Service Book pages verified, signed & dated",
+      data: [["Service Book no.", `SB/${r.id}/${m.joinYear}`], ["Volumes", r.qualifyingYears > 30 ? "2" : "1"], ["Last attestation", "31 Mar 2026"], ["Missing entries", "None"]] },
+    { key: "leave", label: "Leave, deputation & suspension entries reconciled",
+      data: [["EOL without medical cert.", "Nil"], ["Deputation period", "Nil"], ["Suspension", "None"], ["LTC / advance recoveries", "Cleared"]] },
+  ];
+  if (r.quarter === "Yes") items.push({ key: "ndc", label: "No-Dues Certificate from D/o Estates (govt quarter)",
+    data: [["Quarter", "Type-IV / Block C"], ["Vacation", "On or before DOR"], ["NDC status", "Awaited from Estates"]], flag: "NDC pending — follow up", flagTone: "warn" });
+  items.push({ key: "emol", label: "Last emoluments confirmed for Forms 7 & 8",
+    data: [["Last basic pay", formatINR(r.emoluments)], ["Pay level", r.level], ["DA at DOR", "50%"], ["NPA", "N.A."]] });
+  return items;
+}
+
+// Submitted Form 6A verification (Case Workbench → Verify submitted Form 6A)
+export function formCheckEvidence(r) {
+  const m = _meta(r);
+  return [
+    { key: "recv", label: "Form 6A received, complete & signed",
+      data: [["Submitted", "received from portal"], ["Mode", "Pensioner portal"], ["Sections", "All filled"], ["e-Sign", "Verified"]] },
+    { key: "nom", label: "Nomination for life-time arrears / gratuity valid",
+      data: [["Nominee", "Spouse"], ["Relationship", "Wife / Husband"], ["Share", "100%"], ["Witnesses", "2"]] },
+    { key: "bank", label: "Bank account & IFSC verified (penny-drop)",
+      data: [["Bank", "SBI — Pension Cell"], ["Account", "XXXXXX" + m.last4], ["IFSC", "SBIN0001234"], ["Penny-drop", "₹1 credited — name matched"]],
+      flag: "Penny-drop successful", flagTone: "ok" },
+    { key: "photo", label: "Joint photograph & specimen signatures attached",
+      data: [["Joint photograph", "On record"], ["Specimen signatures", "3 sets"], ["Thumb impression", "N.A."]] },
+    { key: "fam", label: "Family details & CGHS particulars updated",
+      data: [["Spouse", "On record"], ["Dependents", "1"], ["CGHS card", "Active"], ["Disabled dependent", "None"]] },
+  ];
+}
+
+// ---------- evidence for family pension / EOP ----------
+export function eligEvidence(c) {
+  if (c.kind === "EOP / EOFP") return [
+    { key: "attr", label: "Death attributable to government service established",
+      data: [["Circumstance", "While on duty"], ["Inquiry report", "On record"], ["Attributability", "Accepted"]], flag: "Attributable to service", flagTone: "ok" },
+    { key: "cat", label: "Category of EOP (B/C/D/E) determined",
+      data: [["Category", "Category-B"], ["Basis", "Death due to service conditions"]] },
+    { key: "claim", label: "Claimant is the eligible beneficiary",
+      data: [["Claimant", c.name], ["Relation", c.relation], ["Deceased", `${c.deceased} · ${c.deceasedDesig}`]] },
+    { key: "med", label: "Board of enquiry / medical opinion on record",
+      data: [["Medical board", "Constituted"], ["Opinion", "Received"]] },
+  ];
+  return [
+    { key: "rel", label: "Relationship with the deceased verified",
+      data: [["Claimant", c.name], ["Relation", c.relation], ["Deceased", `${c.deceased} · ${c.deceasedDesig}`], ["Record", "On the Service Book"]] },
+    { key: "order", label: "Claimant first in the order of eligibility",
+      data: [["Order", c.relation.includes("Son") ? "Child (after spouse)" : "Spouse (1st)"], ["Other claimants", "None on record"]] },
+    { key: "cond", label: "Age / marital / dependency conditions met",
+      data: [["Age", `${c.age} years`], ["Status", c.relation.includes("Son") ? "Minor — guardian: father" : "Widow / Widower"], ["Independent income", "Below limit"]] },
+    { key: "noexist", label: "No other family-pension already in payment",
+      data: [["Existing FP", "None found"], ["Cross-check", "DoPPW database"]], flag: "No duplicate family pension", flagTone: "ok" },
+  ];
+}
+
+export function docsEvidence(c) {
+  const items = [
+    { key: "death", label: "Death certificate verified",
+      data: [["Certificate no.", `MC/${c.id}/2026`], ["Issuing authority", "Municipal Corporation"], ["Date of death", c.dol]] },
+    { key: "idv", label: "Claimant identity / Aadhaar verified",
+      data: [["Aadhaar", "XXXX-XXXX-7741"], ["Photograph", "Attached"], ["Match", "Verified"]] },
+    { key: "bank", label: "Bank account & IFSC verified",
+      data: [["Bank", "State Bank of India"], ["Account", "XXXXXX2210"], ["IFSC", "SBIN0001234"], ["Penny-drop", "Name matched"]] },
+  ];
+  if (c.relation.includes("Son") || c.relation.includes("minor")) items.push({ key: "guard", label: "Guardianship certificate (minor claimant)",
+    data: [["Guardian", "Father"], ["Certificate", "Attached & attested"], ["Minor's age", `${c.age} years`]] });
+  if (c.quarter === "Yes") items.push({ key: "ndc", label: "No-Dues Certificate (govt quarter)", data: [["NDC", "Received"]] });
+  return items;
+}
+
+export function sanctionEvidence(c) {
+  return [
+    { key: "sanc", label: "Family pension sanctioned under CCS (Pension) Rules",
+      data: [["Rule", "Rule 50 / 54, CCS (Pension) Rules 2021"], ["Normal rate", "30% of last pay"], ["Enhanced rate", "50% of last pay"], ["Last pay", formatINR(c.lastPay)]] },
+    { key: "form18", label: "Form 18 prepared & signed",
+      data: [["Form 18", "Generated"], ["Signed by", "Head of Office"]] },
+    { key: "fwd", label: "Forwarded to PAO for PPO",
+      data: [["PAO", HOO_OFFICE.pao], ["Mode", "e-forwarded"]] },
+  ];
+}

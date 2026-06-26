@@ -369,3 +369,95 @@ export function HistoryTrail({ items, accent = "primary" }) {
     </div>
   );
 }
+
+// ---- vertical process step list (shows owner + state per step) ----
+export function StepList({ steps, current, onOpen }) {
+  return (
+    <ol className="space-y-2">
+      {steps.map((s, i) => {
+        const done = i < current, here = i === current;
+        const auto = s.actor && s.actor !== "HOO" && s.actor !== "You";
+        const clickable = here && !auto && onOpen;
+        const Tag = clickable ? "button" : "div";
+        return (
+          <Tag key={s.key || i} onClick={clickable ? () => onOpen(s) : undefined}
+            className={cn("flex w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-colors",
+              here ? "border-saffron/50 bg-saffron/[0.06]" : "border-border", clickable && "hover:border-saffron")}>
+            <span className={cn("grid h-7 w-7 flex-shrink-0 place-items-center rounded-full text-white",
+              done ? "bg-success" : here ? "bg-saffron" : "bg-muted-foreground/25")}>
+              <Icon name={done ? "check" : here ? (auto ? "activity" : "arrowRight") : "info"} size={13} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className={cn("text-sm font-semibold", done || here ? "text-foreground" : "text-muted-foreground")}>{s.label}</div>
+              {here && auto && <div className="text-[11px] font-medium text-saffron">Awaiting {s.actor} — updates automatically</div>}
+              {here && !auto && <div className="text-[11px] font-medium text-primary">Action required by you</div>}
+              {!here && s.sub && <div className="text-[11px] text-muted-foreground">{s.sub}</div>}
+            </div>
+            {done && <span className="text-[11px] font-bold text-success">Done</span>}
+            {clickable && <Icon name="chevronRight" size={15} className="text-saffron" />}
+          </Tag>
+        );
+      })}
+    </ol>
+  );
+}
+
+// ---- a row of verification checkboxes used inside task modals ----
+export function CheckList({ items, checked, onToggle }) {
+  return (
+    <ul className="space-y-1.5">
+      {items.map((it) => {
+        const on = checked.includes(it);
+        return (
+          <li key={it}>
+            <button type="button" onClick={() => onToggle(it)}
+              className={cn("flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                on ? "border-success/40 bg-success/[0.06]" : "border-border hover:border-primary/40")}>
+              <span className={cn("grid h-5 w-5 flex-shrink-0 place-items-center rounded-md text-white", on ? "bg-success" : "bg-muted-foreground/25")}><Icon name="check" size={12} /></span>
+              <span className={on ? "text-foreground" : "text-muted-foreground"}>{it}</span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+// ---- evidence-backed checklist: shows the data the officer must review, then confirm ----
+export function EvidenceChecklist({ items, checked, onToggle }) {
+  return (
+    <ul className="space-y-2.5">
+      {items.map((it) => {
+        const on = checked.includes(it.key);
+        return (
+          <li key={it.key} className={cn("rounded-xl2 border p-4 transition-colors", on ? "border-success/40 bg-success/[0.04]" : "border-border bg-card")}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-2.5">
+                <span className={cn("mt-0.5 grid h-5 w-5 flex-shrink-0 place-items-center rounded-md text-white", on ? "bg-success" : "bg-muted-foreground/25")}><Icon name="check" size={12} /></span>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold text-foreground">{it.label}</div>
+                  {it.data && (
+                    <div className="mt-2 grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+                      {it.data.map(([k, v]) => (
+                        <div key={k} className="flex items-baseline justify-between gap-3 border-b border-dashed border-border/70 pb-1">
+                          <span className="text-xs text-muted-foreground">{k}</span>
+                          <span className="text-right text-xs font-semibold text-foreground">{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {it.flag && <p className={cn("mt-2 inline-flex items-center gap-1 text-xs font-bold", it.flagTone === "warn" ? "text-saffron" : "text-success")}><Icon name={it.flagTone === "warn" ? "info" : "check"} size={12} /> {it.flag}</p>}
+                </div>
+              </div>
+              <button type="button" onClick={() => onToggle(it.key)}
+                className={cn("flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors",
+                  on ? "bg-success/12 text-success" : "bg-primary text-primary-foreground hover:bg-primary-light")}>
+                {on ? <span className="inline-flex items-center gap-1"><Icon name="check" size={13} /> Verified</span> : "Confirm"}
+              </button>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}

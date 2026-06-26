@@ -23,7 +23,7 @@ function Computation({ r }) {
   const p = basicPension({ emoluments: r.emoluments, qualifyingYears: r.qualifyingYears }).pension;
   const com = commutation({ pension: p, fractionPercent: 40, factor: 8.194 });
   const grat = retirementGratuity({ emoluments: r.emoluments, drPercent: 50, qualifyingYears: r.qualifyingYears }).gratuity;
-  const rows = [["Last emoluments", formatINR(r.emoluments)], ["Qualifying service", `${r.qualifyingYears} years`], ["Basic pension (50%)", formatINR(p)], ["Commuted value (40%)", formatINR(com.lumpSum)], ["Reduced pension", formatINR(com.reduced)], ["Retirement gratuity", formatINR(grat)], ["Monthly (basic + DR)", formatINR(totalMonthly({ pension: p, drPercent: 50 }))]];
+  const rows = [["Last emoluments", formatINR(r.emoluments)], ["Qualifying service", `${r.qualifyingYears} years`], ["Basic pension (50%)", formatINR(p)], ["Commuted value (40%)", formatINR(com.lumpSum)], ["Reduced pension", formatINR(com.reducedPension)], ["Retirement gratuity", formatINR(grat)], ["Monthly (basic + DR)", formatINR(totalMonthly({ pension: p, drPercent: 50 }))]];
   return (
     <div className="rounded-xl border border-primary/15 bg-primary/[0.03] p-4">
       <div className="mb-2 text-xs font-bold uppercase tracking-wide text-primary">Forms 7 & 8 — verified computation</div>

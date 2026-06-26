@@ -6,6 +6,7 @@ import { Screen } from "../components/PortalShell.jsx";
 import { getRole, MODULES } from "../data/rbac.js";
 import { KPI, StatusPill } from "../components/ui/kit.jsx";
 import { getModuleForRole, roleHeader, roleSummary } from "./registry.js";
+import OfficialProfile from "./common/OfficialProfile.jsx";
 import { PENSIONER, PAYMENTS, GRIEVANCES, DLC_STATUS, FORM6A } from "../data/pensioner.js";
 import { formatINR } from "../lib/pension.js";
 
@@ -30,6 +31,9 @@ export default function Dashboard({ roleId, onLogout }) {
   };
 
   const ActiveModule = active ? moduleFor(active) : null;
+  if (active === "profile" && !isPensioner) {
+    return <OfficialProfile roleId={role.id} onBack={() => setActive(null)} />;
+  }
   if (ActiveModule) {
     return (
       <AnimatePresence mode="wait">
@@ -58,7 +62,7 @@ export default function Dashboard({ roleId, onLogout }) {
           {!isPensioner && header && <p className="text-sm text-muted-foreground">{header.subtitle}</p>}
         </div>
         <div className="flex items-center gap-2.5">
-          {isPensioner && (
+          {isPensioner ? (
             <>
               <button onClick={() => setPpoGenerated((v) => !v)} title="Demo: toggle pre-PPO state"
                 className="hidden items-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:border-primary/40 sm:inline-flex">
@@ -66,6 +70,8 @@ export default function Dashboard({ roleId, onLogout }) {
               </button>
               <Button variant="ghost" onClick={() => setActive("profile")} className="px-4 py-2.5"><Icon name="userCheck" size={16} /> My Profile</Button>
             </>
+          ) : (
+            <Button variant="ghost" onClick={() => setActive("profile")} className="px-4 py-2.5"><Icon name="userCheck" size={16} /> My Profile</Button>
           )}
           <Button variant="dark" onClick={onLogout} className="px-4 py-2.5"><Icon name="login" size={16} /> Log out</Button>
         </div>

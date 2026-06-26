@@ -137,7 +137,7 @@ function formInfo(name) {
       rows: [...base, ["Qualifying service", `${P.qualifyingYears} years`], ["Class of pension", "Superannuation"], ["Date of commencement", "01 Apr 2024"], ["Basic pension", formatINR(pen)]],
       note: "Forwarded by the Head of Office to the Pay & Accounts Office for issue of the PPO." },
     "Form 8": { number: "Form 8", title: "Calculation of Pension & Gratuity",
-      rows: [...base, ["Last emoluments", formatINR(P.emoluments)], ["Basic pension (50%)", formatINR(pen)], ["Commuted value (40%)", formatINR(com.lumpSum)], ["Reduced pension", formatINR(com.reduced)], ["Retirement gratuity", formatINR(grat)]],
+      rows: [...base, ["Last emoluments", formatINR(P.emoluments)], ["Basic pension (50%)", formatINR(pen)], ["Commuted value (40%)", formatINR(com.lumpSum)], ["Reduced pension", formatINR(com.reducedPension)], ["Retirement gratuity", formatINR(grat)]],
       note: "Computation sheet enclosed with the pension case." },
     "Nomination": { number: "Nomination", title: "Nomination for Life-time Arrears / Gratuity",
       rows: [...base, ["Nominee 1", "Sunita Singh — Spouse — 100%"], ["Nominee 2 (contingent)", "Rohit Singh — Disabled child"]],

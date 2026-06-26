@@ -26,7 +26,7 @@ export default function PortalShell({ onClose, children }) {
     >
       <div className="pointer-events-none fixed inset-0 dot-grid opacity-50" />
 
-      <header className="sticky top-0 z-10 flex items-center justify-between bg-primary px-4 py-3 text-primary-foreground sm:px-6">
+      <header className="sticky top-0 z-40 flex items-center justify-between bg-primary px-4 py-3 text-primary-foreground sm:px-6">
         <button onClick={onClose} className="flex items-center gap-2.5">
           <span className="grid h-8 w-8 place-items-center rounded-full bg-saffron text-saffron-foreground">
             <Icon name="shieldCheck" size={17} />

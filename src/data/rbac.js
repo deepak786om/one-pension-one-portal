@@ -20,7 +20,8 @@ export const MODULES = {
   pao_workbench: { label: "Sanction & Issue PPO", icon: "badgeCheck", desc: "Scrutinise HOO cases, raise objections and issue the e-PPO." },
   pao_revision: { label: "Revision Authorities", icon: "repeat", desc: "Issue revised pension authorities on CPC / restoration." },
   ddo_cases: { label: "My Forwarded Cases", icon: "arrowUpRight", desc: "Track retiree cases forwarded to the Head of Office." },
-  hod_anubhav: { label: "Anubhav Recommendations", icon: "bookOpen", desc: "Recommend and publish service experiences." },
+  hoo_anubhav: { label: "Anubhav Recommendations", icon: "bookOpen", desc: "Review and recommend pensioners' experiences to the HOD." },
+  hod_anubhav: { label: "Anubhav Recommendations", icon: "bookOpen", desc: "Review recommended experiences and publish them." },
   assoc_members: { label: "Member Registry", icon: "users", desc: "Maintain your association's member list." },
   compact_export: { label: "Export to COMPACT", icon: "database", desc: "Generate XML for CPAO / COMPACT." },
   retiree_records: { label: "Maintain Retiree Records", icon: "fileText", desc: "Add and update retiree details." },
@@ -75,7 +76,7 @@ export const ROLES = [
   {
     id: "HOO", label: "Head of Office (HOO)", icon: "briefcase", group: "Government Officials",
     authTitle: "Parichay (GoI SSO)", authFields: parichay,
-    modules: ["case_workbench", "retiree_records", "family_pension", "pension_revision", "hoo_grievance", "hoo_utility", "dept_reports"], reg: officialReg,
+    modules: ["case_workbench", "retiree_records", "family_pension", "pension_revision", "hoo_grievance", "hoo_anubhav", "hoo_utility", "dept_reports"], reg: officialReg,
   },
   {
     id: "PAO", label: "Pay & Accounts Officer (PAO)", icon: "badgeCheck", group: "Government Officials",
