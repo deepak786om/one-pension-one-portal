@@ -11,7 +11,8 @@ export const MODULES = {
   service_verification: { label: "Service Verification", icon: "fileCheck", desc: "Verify Service Book and qualifying service." },
   forms_computation: { label: "Forms 7 / 8 Computation", icon: "fileText", desc: "Prepare the pension computation forms." },
   send_to_pao: { label: "Forward Case to PAO", icon: "arrowUpRight", desc: "Send the sanctioned case to PAO (eSign/DSC)." },
-  family_pension: { label: "Family Pension & EOP", icon: "heartHandshake", desc: "Process family and extra-ordinary pension." },
+  family_pension: { label: "Family Pension", icon: "heartHandshake", desc: "Death-in-service and death/ineligibility family pension." },
+  eop: { label: "Extraordinary Pension (EOP)", icon: "shieldCheck", desc: "Disability pension and extraordinary family pension (EOFP)." },
   hoo_grievance: { label: "Office Grievances", icon: "messageCircle", desc: "View and act on office-level grievances." },
   case_workbench: { label: "Pension Cases", icon: "briefcase", desc: "Process retiring employees end-to-end: verify, forms, compute, forward to PAO." },
   pension_revision: { label: "Pension Revision", icon: "repeat", desc: "Revise pension on pay-commission / restoration and forward to PAO." },
@@ -76,7 +77,7 @@ export const ROLES = [
   {
     id: "HOO", label: "Head of Office (HOO)", icon: "briefcase", group: "Government Officials",
     authTitle: "Parichay (GoI SSO)", authFields: parichay,
-    modules: ["case_workbench", "retiree_records", "family_pension", "pension_revision", "hoo_grievance", "hoo_anubhav", "hoo_utility", "dept_reports"], reg: officialReg,
+    modules: ["case_workbench", "retiree_records", "family_pension", "eop", "pension_revision", "hoo_grievance", "hoo_anubhav", "hoo_utility", "dept_reports"], reg: officialReg,
   },
   {
     id: "PAO", label: "Pay & Accounts Officer (PAO)", icon: "badgeCheck", group: "Government Officials",

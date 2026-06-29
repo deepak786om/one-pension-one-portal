@@ -134,21 +134,37 @@ export const RETIREES = [
 
 // Family pension / EOP
 export const FAMILY_CASES = [
-  { id: "F1", name: "Smt. Kamla Devi", deceased: "Late Shri R. K. Verma", relation: "Spouse", kind: "In-Service Death",
-    dol: "12 Apr 2026", ppo: "", stage: "Documents under verification", quarter: "No",
+  { id: "F1", name: "Smt. Kamla Devi", deceased: "Late Shri R. K. Verma", relation: "Spouse", subtype: "In-Service Death",
+    dol: "12 Apr 2026", deceasedPpo: "", quarter: "No", start: 2,
     lastPay: 96000, qualifyingYears: 18, age: 54, deceasedDesig: "Section Officer",
     aadhaar: "XXXX-XXXX-2210", bank: "State Bank of India — Pension Cell", account: "XXXXXX2210", ifsc: "SBIN0001234",
-    note: "Family pension @30% + DA; enhanced rate (50%) for 10 years from death; death gratuity payable." },
-  { id: "F2", name: "Master Aryan Singh (minor)", deceased: "Late Smt. Sunita Singh", relation: "Son (guardian: father)", kind: "Death after retirement",
-    dol: "02 May 2026", ppo: "", stage: "Eligibility check", quarter: "No",
-    lastPay: 72000, qualifyingYears: 0, age: 11, deceasedDesig: "Assistant (Retd.)",
+    note: "Death in service: family pension @30% (enhanced 50% for 10 years from death) + death gratuity." },
+  { id: "F2", name: "Smt. Radha Nair", deceased: "Late Shri P. Nair (pensioner)", relation: "Spouse", subtype: "Death / Ineligibility",
+    dol: "02 May 2026", deceasedPpo: "PPO-2014-DEL-0039210", quarter: "No", start: 1, trigger: "Death of pensioner after retirement",
+    lastPay: 84000, qualifyingYears: 33, age: 61, deceasedDesig: "Superintendent (Retd.)",
     aadhaar: "XXXX-XXXX-5521", bank: "Punjab National Bank", account: "XXXXXX5521", ifsc: "PUNB0123456",
-    note: "Conversion from pension to family pension; enhanced rate for 7 years; guardian certificate required." },
-  { id: "E1", name: "Smt. Reena Yadav", deceased: "Late Const. Mahesh Yadav", relation: "Spouse", kind: "EOP / EOFP",
-    dol: "21 Mar 2026", ppo: "", stage: "Attributability under examination", quarter: "No",
-    lastPay: 60000, qualifyingYears: 9, age: 41, deceasedDesig: "Constable",
+    note: "Death after retirement: conversion of pension to family pension; enhanced 50% for 7 yrs / until age 67; no death gratuity." },
+  { id: "F3", name: "Master Aryan Singh (minor)", deceased: "Late Smt. Sunita Singh (pensioner)", relation: "Son (guardian: father)", subtype: "Death / Ineligibility",
+    dol: "10 Mar 2026", deceasedPpo: "PPO-2012-DEL-0031880", quarter: "No", start: 1, trigger: "Ineligibility of previous recipient (remarriage)",
+    lastPay: 72000, qualifyingYears: 0, age: 11, deceasedDesig: "Assistant (Retd.)",
     aadhaar: "XXXX-XXXX-8841", bank: "Canara Bank", account: "XXXXXX8841", ifsc: "CNRB0004412",
-    note: "Death attributable to government service — extraordinary family pension; Category-B/C examination." },
+    note: "Next-in-line transfer on ineligibility of the previous recipient; guardian certificate required; no death gratuity." },
+];
+
+// EOP — Extraordinary Pension (CCS EOP Rules). Two subtypes:
+//  • Disability Pension (to the disabled employee): service element + disability element (broad-banded)
+//  • Extraordinary Family Pension / EOFP (to family on attributable death): category-based special rate
+export const EOP_CASES = [
+  { id: "EP1", name: "Shri Manoj Kumar", relation: "Self (employee)", subtype: "Disability Pension",
+    event: "Invalidated out of service", dol: "18 Feb 2026", quarter: "No", start: 1,
+    lastPay: 90000, qualifyingYears: 14, eopCategory: "C", disabilityPct: 70, deceasedDesig: "Sub-Inspector",
+    aadhaar: "XXXX-XXXX-3091", bank: "Bank of Baroda", account: "XXXXXX3091", ifsc: "BARB0VJNAGA",
+    note: "Disablement attributable to service (Category C). Pension = service element (50%) + disability element (broad-banded)." },
+  { id: "EP2", name: "Smt. Reena Yadav", deceased: "Late Const. Mahesh Yadav", relation: "Spouse", subtype: "Extraordinary Family Pension (EOFP)",
+    event: "Death attributable to service", dol: "21 Mar 2026", quarter: "No", start: 1,
+    lastPay: 60000, qualifyingYears: 9, eopCategory: "D", age: 41, deceasedDesig: "Constable",
+    aadhaar: "XXXX-XXXX-8842", bank: "Canara Bank", account: "XXXXXX8842", ifsc: "CNRB0004412",
+    note: "Death attributable to government service (Category D). Special family pension at the category rate (flat, not enhanced/normal)." },
 ];
 
 // Beneficiary + bank details the HOO reviews before sanctioning a family pension.
@@ -269,52 +285,109 @@ export function formCheckEvidence(r) {
   ];
 }
 
-// ---------- evidence for family pension / EOP ----------
-export function eligEvidence(c) {
-  if (c.kind === "EOP / EOFP") return [
-    { key: "attr", label: "Death attributable to government service established",
-      data: [["Circumstance", "While on duty"], ["Inquiry report", "On record"], ["Attributability", "Accepted"]], flag: "Attributable to service", flagTone: "ok" },
-    { key: "cat", label: "Category of EOP (B/C/D/E) determined",
-      data: [["Category", "Category-B"], ["Basis", "Death due to service conditions"]] },
-    { key: "claim", label: "Claimant is the eligible beneficiary",
-      data: [["Claimant", c.name], ["Relation", c.relation], ["Deceased", `${c.deceased} · ${c.deceasedDesig}`]] },
-    { key: "med", label: "Board of enquiry / medical opinion on record",
-      data: [["Medical board", "Constituted"], ["Opinion", "Received"]] },
+// ---------- evidence for FAMILY PENSION (subtype-aware) ----------
+export function familyElig(c) {
+  if (c.subtype === "In-Service Death") return [
+    { key: "rel", label: "Relationship with the deceased verified", data: [["Claimant", c.name], ["Relation", c.relation], ["Deceased", `${c.deceased} · ${c.deceasedDesig}`]] },
+    { key: "order", label: "Claimant first in the order of eligibility", data: [["Order", c.relation.includes("Son") ? "Child (after spouse)" : "Spouse (1st)"], ["Other claimants", "None on record"]] },
+    { key: "cond", label: "Age / marital / dependency conditions met", data: [["Age", `${c.age} years`], ["Status", "Widow / Widower"], ["Independent income", "Below limit"]] },
+    { key: "noexist", label: "No other family-pension already in payment", data: [["Existing FP", "None found"], ["Cross-check", "DoPPW database"]], flag: "No duplicate family pension", flagTone: "ok" },
   ];
+  const isInelig = c.trigger && c.trigger.includes("Ineligibility");
   return [
-    { key: "rel", label: "Relationship with the deceased verified",
-      data: [["Claimant", c.name], ["Relation", c.relation], ["Deceased", `${c.deceased} · ${c.deceasedDesig}`], ["Record", "On the Service Book"]] },
-    { key: "order", label: "Claimant first in the order of eligibility",
-      data: [["Order", c.relation.includes("Son") ? "Child (after spouse)" : "Spouse (1st)"], ["Other claimants", "None on record"]] },
-    { key: "cond", label: "Age / marital / dependency conditions met",
-      data: [["Age", `${c.age} years`], ["Status", c.relation.includes("Son") ? "Minor — guardian: father" : "Widow / Widower"], ["Independent income", "Below limit"]] },
-    { key: "noexist", label: "No other family-pension already in payment",
-      data: [["Existing FP", "None found"], ["Cross-check", "DoPPW database"]], flag: "No duplicate family pension", flagTone: "ok" },
+    { key: "trigger", label: "Trigger verified (death of pensioner / ineligibility of recipient)", data: [["Trigger", c.trigger || "Death of pensioner"], ["Evidence", isInelig ? "Remarriage / majority proof" : "Death certificate of the pensioner"]], flag: "Trigger established", flagTone: "ok" },
+    { key: "ppo", label: "Deceased pensioner's PPO verified", data: [["PPO", c.deceasedPpo], ["Pension drawn", "On record"], ["Authorised family pension", "Recorded in PPO"]] },
+    { key: "next", label: "Claimant is next in the order of eligibility", data: [["Claimant", `${c.name} (${c.relation})`], ["Order", c.relation.includes("Son") ? "Child (after spouse)" : "Spouse (1st)"]] },
+    { key: "cond", label: "Age / marital / dependency conditions met", data: [["Age", `${c.age} years`], ["Status", c.relation.includes("Son") ? "Minor — guardian: father" : "Widow / Widower"]] },
   ];
 }
 
-export function docsEvidence(c) {
-  const items = [
-    { key: "death", label: "Death certificate verified",
-      data: [["Certificate no.", `MC/${c.id}/2026`], ["Issuing authority", "Municipal Corporation"], ["Date of death", c.dol]] },
-    { key: "idv", label: "Claimant identity / Aadhaar verified",
-      data: [["Aadhaar", "XXXX-XXXX-7741"], ["Photograph", "Attached"], ["Match", "Verified"]] },
-    { key: "bank", label: "Bank account & IFSC verified",
-      data: [["Bank", c.bank], ["Account", c.account], ["IFSC", c.ifsc], ["Penny-drop", "Name matched"]] },
-  ];
-  if (c.relation.includes("Son") || c.relation.includes("minor")) items.push({ key: "guard", label: "Guardianship certificate (minor claimant)",
-    data: [["Guardian", "Father"], ["Certificate", "Attached & attested"], ["Minor's age", `${c.age} years`]] });
-  if (c.quarter === "Yes") items.push({ key: "ndc", label: "No-Dues Certificate (govt quarter)", data: [["NDC", "Received"]] });
+export function familyDocs(c) {
+  const items = [];
+  if (c.subtype === "In-Service Death") {
+    items.push({ key: "death", label: "Death certificate verified", data: [["Certificate no.", `MC/${c.id}/2026`], ["Issuing authority", "Municipal Corporation"], ["Date of death", c.dol]] });
+    items.push({ key: "form14", label: "Form 14 (claim for family pension) received", data: [["Form 14", "Complete & signed"], ["Claimant", c.name]] });
+    items.push({ key: "form12", label: "Form 12 (nomination for death gratuity) on record", data: [["Form 12", "On record"], ["Death gratuity", "Payable"]] });
+  } else {
+    const isInelig = c.trigger && c.trigger.includes("Ineligibility");
+    items.push({ key: "proof", label: isInelig ? "Proof of ineligibility of previous recipient" : "Death certificate of the pensioner", data: isInelig ? [["Document", "Remarriage / majority certificate"], ["Attested", "Yes"]] : [["Certificate no.", `MC/${c.id}/2026`], ["Date of death", c.dol]] });
+    items.push({ key: "form14", label: "Form 14 (claim for family pension) received", data: [["Form 14", "Complete & signed"], ["Claimant", c.name]] });
+    items.push({ key: "ppoCopy", label: "Copy of the deceased's PPO enclosed", data: [["PPO", c.deceasedPpo]] });
+  }
+  items.push({ key: "idv", label: "Claimant identity / Aadhaar verified", data: [["Aadhaar", c.aadhaar], ["Photograph", "Attached"], ["Match", "Verified"]] });
+  items.push({ key: "bank", label: "Bank account & IFSC verified", data: [["Bank", c.bank], ["Account", c.account], ["IFSC", c.ifsc], ["Penny-drop", "Name matched"]] });
+  if (c.relation.includes("Son") || c.relation.includes("minor")) items.push({ key: "guard", label: "Guardianship certificate (minor claimant)", data: [["Guardian", "Father"], ["Certificate", "Attached & attested"], ["Minor's age", `${c.age} years`]] });
   return items;
 }
 
-export function sanctionEvidence(c) {
+export function familySanction(c) {
+  const inService = c.subtype === "In-Service Death";
   return [
-    { key: "sanc", label: "Family pension sanctioned under CCS (Pension) Rules",
-      data: [["Rule", "Rule 50 / 54, CCS (Pension) Rules 2021"], ["Normal rate", "30% of last pay"], ["Enhanced rate", "50% of last pay"], ["Last pay", formatINR(c.lastPay)]] },
-    { key: "form18", label: "Form 18 prepared & signed",
-      data: [["Form 18", "Generated"], ["Signed by", "Head of Office"]] },
-    { key: "fwd", label: "Forwarded to PAO for PPO",
-      data: [["PAO", HOO_OFFICE.pao], ["Mode", "e-forwarded"]] },
+    { key: "sanc", label: "Family pension sanctioned under CCS (Pension) Rules", data: [["Rule", "Rule 50, CCS (Pension) Rules 2021"], ["Normal rate", "30% of last pay"], ["Enhanced rate", inService ? "50% for 10 years" : "50% for 7 yrs / age 67"], ["Last pay", formatINR(c.lastPay)]] },
+    ...(inService ? [{ key: "grat", label: "Death gratuity sanctioned (Form 12)", data: [["Form 12", "On record"], ["Gratuity", "Payable, within ₹25 L ceiling"]] }] : []),
+    { key: "form18", label: "Form 18 prepared & signed", data: [["Form 18", "Generated"], ["Signed by", "Head of Office"]] },
+    { key: "fwd", label: "Forwarded to PAO for PPO", data: [["PAO", HOO_OFFICE.pao], ["Mode", "e-forwarded"]] },
   ];
+}
+
+// ---------- evidence for EOP (subtype-aware) ----------
+export function eopElig(c) {
+  if (c.subtype === "Disability Pension") return [
+    { key: "attr", label: "Disablement attributable to / aggravated by service", data: [["Circumstance", "Injury on duty"], ["Injury report", "On record"], ["Attributability", "Accepted"]], flag: "Attributable to service", flagTone: "ok" },
+    { key: "board", label: "Medical Board assessment on record", data: [["Medical Board", "Constituted"], ["Degree of disablement", `${c.disabilityPct}%`], ["Permanent", "Yes"]] },
+    { key: "cat", label: "Category of disablement determined", data: [["Category", `Category ${c.eopCategory}`], ["Basis", "CCS (EOP) Rules"]] },
+    { key: "invalid", label: "Invalidation out of service approved", data: [["Status", c.event], ["Qualifying service", `${c.qualifyingYears} years`]] },
+  ];
+  return [
+    { key: "attr", label: "Death attributable to / aggravated by service", data: [["Circumstance", "While on duty"], ["Board of enquiry", "On record"], ["Attributability", "Accepted"]], flag: "Attributable to service", flagTone: "ok" },
+    { key: "cat", label: "Category (A–E) determined", data: [["Category", `Category ${c.eopCategory}`], ["Basis", "Cause of death under EOP Rules"]] },
+    { key: "claim", label: "Claimant is the eligible beneficiary", data: [["Claimant", c.name], ["Relation", c.relation], ["Deceased", `${c.deceased} · ${c.deceasedDesig}`]] },
+    { key: "board", label: "Board of enquiry / medical opinion on record", data: [["Board of enquiry", "Completed"], ["Opinion", "Received"]] },
+  ];
+}
+
+export function eopDocs(c) {
+  if (c.subtype === "Disability Pension") return [
+    { key: "mb", label: "Medical Board proceedings enclosed", data: [["Report", "Invalidation form"], ["Degree", `${c.disabilityPct}%`]] },
+    { key: "injury", label: "Injury / attributability report enclosed", data: [["Report", "On record"], ["Sanctioned", "Yes"]] },
+    { key: "idv", label: "Employee identity / Aadhaar verified", data: [["Aadhaar", c.aadhaar], ["Photograph", "Attached"]] },
+    { key: "bank", label: "Bank account & IFSC verified", data: [["Bank", c.bank], ["Account", c.account], ["IFSC", c.ifsc], ["Penny-drop", "Name matched"]] },
+  ];
+  return [
+    { key: "death", label: "Death certificate verified", data: [["Certificate no.", `MC/${c.id}/2026`], ["Date of death", c.dol]] },
+    { key: "attrib", label: "Attributability / Board of enquiry report", data: [["Report", "On record"], ["Category", `Category ${c.eopCategory}`]] },
+    { key: "idv", label: "Claimant identity / Aadhaar verified", data: [["Aadhaar", c.aadhaar], ["Photograph", "Attached"]] },
+    { key: "bank", label: "Bank account & IFSC verified", data: [["Bank", c.bank], ["Account", c.account], ["IFSC", c.ifsc], ["Penny-drop", "Name matched"]] },
+  ];
+}
+
+export function eopSanction(c) {
+  const disability = c.subtype === "Disability Pension";
+  return [
+    { key: "sanc", label: disability ? "Disability pension sanctioned (CCS EOP Rules)" : "Extraordinary family pension sanctioned (CCS EOP Rules)",
+      data: disability ? [["Rule", "CCS (EOP) Rules"], ["Service element", "50% of pay"], ["Disability element", "Category-based"], ["Category", `Category ${c.eopCategory}`]] : [["Rule", "CCS (EOP) Rules"], ["Category", `Category ${c.eopCategory}`], ["Special rate", c.eopCategory === "E" ? "100%" : c.eopCategory === "D" ? "60%" : "40%"]] },
+    { key: "form", label: disability ? "Invalidation & sanction order signed" : "Sanction order signed", data: [["Order", "Generated"], ["Signed by", "Head of Office"]] },
+    { key: "fwd", label: "Forwarded to PAO for PPO", data: [["PAO", HOO_OFFICE.pao], ["Mode", "e-forwarded"]] },
+  ];
+}
+
+// Simulated EIS / pension-DB lookup by PAN. In production this is a Parichay-authenticated
+// call to the Employee Information System (serving) or CPAO/Bhavishya (pensioner) databases.
+const EIS_SEEDED = {
+  ABCPV1234L: { holder: "Late Shri R. K. Verma", designation: "Section Officer", lastPay: 96000, qualifyingYears: 18, ppo: "", bank: "State Bank of India — Salary", account: "XXXXXX2210", ifsc: "SBIN0001234", aadhaar: "XXXX-XXXX-2210" },
+  PQRSM5678N: { holder: "Shri Manoj Kumar", designation: "Sub-Inspector", lastPay: 90000, qualifyingYears: 14, ppo: "", bank: "Bank of Baroda — Salary", account: "XXXXXX3091", ifsc: "BARB0VJNAGA", aadhaar: "XXXX-XXXX-3091" },
+  LMNOP4321Q: { holder: "Late Shri P. Nair", designation: "Superintendent (Retd.)", lastPay: 84000, qualifyingYears: 33, ppo: "PPO-2014-DEL-0039210", bank: "Punjab National Bank", account: "XXXXXX5521", ifsc: "PUNB0123456", aadhaar: "XXXX-XXXX-5521" },
+};
+export function eisFetch(pan) {
+  const key = (pan || "").toUpperCase();
+  if (EIS_SEEDED[key]) return EIS_SEEDED[key];
+  // deterministic fallback so any valid PAN returns a plausible record
+  const n = key.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const tail = String(1000 + (n % 9000));
+  return {
+    holder: "(name as per EIS)", designation: "(designation as per EIS)",
+    lastPay: 60000 + (n % 60) * 1000, qualifyingYears: 10 + (n % 25),
+    ppo: "PPO-20" + (10 + (n % 14)) + "-DEL-00" + tail,
+    bank: "State Bank of India", account: "XXXXXX" + tail, ifsc: "SBIN0001234", aadhaar: "XXXX-XXXX-" + tail,
+  };
 }
