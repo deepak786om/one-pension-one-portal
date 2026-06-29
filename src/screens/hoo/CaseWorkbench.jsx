@@ -6,6 +6,9 @@ import { SectionCard, KPI, StatusPill, DataTable, InfoRow, SuccessNote, Modal, B
 import { cn } from "../../lib/cn.js";
 import { RETIREES, STAGES, BUCKETS, bdrBucket, newPPO, retireeProfile, verifyEvidence, formCheckEvidence } from "../../data/hoo.js";
 import { basicPension, commutation, retirementGratuity, totalMonthly, formatINR } from "../../lib/pension.js";
+import AiCaseSummary, { AiSummaryButton } from "../../components/ui/AiCaseSummary.jsx";
+import { buildCaseSummary } from "../../lib/aiSummary.js";
+import { getAiDefaultOpen } from "../../lib/prefs.js";
 
 // what happens to move OUT of each stage, and who owns it
 const ACT = {
@@ -152,6 +155,7 @@ export default function CaseWorkbench({ onBack }) {
   const [modal, setModal] = useState(null);                 // send | formcheck
   const [filter, setFilter] = useState(null);
   const [flash, setFlash] = useState("");
+  const [aiOpen, setAiOpen] = useState(getAiDefaultOpen());
   // task form state
   const [checks, setChecks] = useState([]);
   const [dispatch, setDispatch] = useState("");
@@ -246,8 +250,28 @@ export default function CaseWorkbench({ onBack }) {
         {flash && <SuccessNote title={flash}>The case record and its history have been updated.</SuccessNote>}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Breadcrumb items={[{ label: "Pension cases", onClick: () => setView({ name: "cockpit" }) }, { label: sel.name }]} />
-          <Button variant="outline" className="px-4 py-2 text-xs" onClick={() => setView({ name: "task", id: sel.id, task: "profile" })}><Icon name="userCheck" size={14} /> View pensioner profile</Button>
+          <div className="flex items-center gap-2">
+            <AiSummaryButton open={aiOpen} onToggle={() => setAiOpen((o) => !o)} />
+            <Button variant="outline" className="px-4 py-2 text-xs" onClick={() => setView({ name: "task", id: sel.id, task: "profile" })}><Icon name="userCheck" size={14} /> View pensioner profile</Button>
+          </div>
         </div>
+        {aiOpen && <AiCaseSummary summary={buildCaseSummary({
+          domain: "superannuation",
+          reference: sel.ppo || `CASE-${sel.id}`,
+          typeLabel: `Pension Case — ${sel.type}`,
+          subject: `${sel.name} (${sel.designation})`,
+          why: `It was auto-created from EIS as the employee approaches superannuation on ${sel.dor}.`,
+          steps: STAGES.slice(0, 6).map((st) => ({ label: st.label, actor: ({ verify: "You (HOO)", send: "You (HOO)", received: "Retiree", forms: "You (HOO)", pao: "You (HOO)", ppo: "PAO" })[st.key] })),
+          current: sel.stage,
+          returned: !!sel.returned,
+          figures: (() => {
+            const p = basicPension({ emoluments: sel.emoluments, qualifyingYears: sel.qualifyingYears }).pension;
+            const grat = retirementGratuity({ emoluments: sel.emoluments, drPercent: 50, qualifyingYears: sel.qualifyingYears }).gratuity;
+            const monthly = totalMonthly({ pension: p, drPercent: 50 });
+            return [["Basic pension", formatINR(p)], ["Retirement gratuity", formatINR(grat)], ["Monthly (basic + DR)", formatINR(monthly)], ["Qualifying service", `${sel.qualifyingYears} years`]];
+          })(),
+          missing: sel.stage < 1 ? ["The Service Book is yet to be verified."] : sel.stage < 3 ? ["Form 6A from the retiree is awaited."] : [],
+        })} />}
         <div className="grid gap-4 sm:grid-cols-4">
           <KPI label="Pension type" value={sel.type} sub={sel.ministry || ""} icon="info" tone="primary" />
           <KPI label="Retirement" value={sel.dor} sub={`BDR ${sel.bdr}M`} icon="activity" tone="saffron" />

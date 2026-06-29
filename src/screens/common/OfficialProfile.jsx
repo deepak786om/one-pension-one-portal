@@ -1,12 +1,15 @@
+import { useState } from "react";
 import ModuleShell from "../pensioner/ModuleShell.jsx";
 import Icon from "../../lib/icons.jsx";
 import { SectionCard, InfoRow } from "../../components/ui/kit.jsx";
 import { getRole, MODULES } from "../../data/rbac.js";
 import { roleProfile } from "../registry.js";
+import { getAiDefaultOpen, setAiDefaultOpen } from "../../lib/prefs.js";
 
 export default function OfficialProfile({ roleId, onBack }) {
   const p = roleProfile(roleId);
   const role = getRole(roleId);
+  const [aiPref, setAiPref] = useState(getAiDefaultOpen());
   if (!p) return null;
   const initials = p.name.split(" ").map((w) => w[0]).slice(0, 2).join("");
   return (
@@ -29,6 +32,24 @@ export default function OfficialProfile({ roleId, onBack }) {
 
       <SectionCard title="Contact & sign-in" desc="Government-issued contact and Parichay single sign-on." icon="info">
         <div className="grid gap-x-8 sm:grid-cols-2">{p.contact.map(([l, v]) => <InfoRow key={l} label={l} value={v} />)}</div>
+      </SectionCard>
+
+      <SectionCard title="Preferences" desc="Personalise how the portal assists you." icon="sparkles">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-4">
+          <div className="flex items-start gap-3">
+            <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 text-white"><Icon name="sparkles" size={17} /></span>
+            <div>
+              <div className="text-sm font-bold text-foreground">Keep AI Suggestion ON</div>
+              <div className="text-xs text-muted-foreground">When on, the AI overview opens by default whenever you open a case. When off, open it from the “AI Summary” button.</div>
+            </div>
+          </div>
+          <button
+            role="switch" aria-checked={aiPref} aria-label="Keep AI Suggestion ON"
+            onClick={() => { const next = !aiPref; setAiDefaultOpen(next); setAiPref(next); }}
+            className={`relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full transition-colors ${aiPref ? "bg-emerald-500" : "bg-slate-300"}`}>
+            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${aiPref ? "translate-x-6" : "translate-x-1"}`} />
+          </button>
+        </div>
       </SectionCard>
 
       <SectionCard title="Authorised services" desc={`RBAC — ${role.modules.length} service${role.modules.length > 1 ? "s" : ""} are enabled for the ${role.label} role.`} icon="shieldCheck">

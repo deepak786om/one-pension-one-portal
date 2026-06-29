@@ -3,7 +3,7 @@ import {
   MessageSquare, Fingerprint, Database, Calculator, BookOpen, HeartHandshake,
   Repeat, Activity, FileCheck2, ArrowUpRight, Scale, BookMarked, Check, Info,
   ChevronRight, ChevronLeft, ArrowRight, LogIn, X, ListChecks, Menu, Phone, Mail,
-  MapPin, Building2, Landmark, ShieldQuestion, Sparkles, ScanFace, Eye, Download,
+  MapPin, Building2, Landmark, ShieldQuestion, Sparkles, ScanFace, Eye, Download, Search, Loader2,
 } from "lucide-react";
 
 const MAP = {
@@ -20,6 +20,8 @@ const MAP = {
   bookOpen: BookOpen,
   heartHandshake: HeartHandshake,
   repeat: Repeat,
+  search: Search,
+  loader: Loader2,
   activity: Activity,
   fileCheck: FileCheck2,
   arrowUpRight: ArrowUpRight,

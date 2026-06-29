@@ -4,6 +4,9 @@ import Button from "../../components/ui/Button.jsx";
 import Icon from "../../lib/icons.jsx";
 import { SectionCard, StatusPill, StepList, EvidenceChecklist, InfoRow, SuccessNote, Breadcrumb, Modal, Field, Input, Select, RadioPills, HistoryTrail } from "../../components/ui/kit.jsx";
 import { newPPO } from "../../data/hoo.js";
+import AiCaseSummary, { AiSummaryButton } from "../../components/ui/AiCaseSummary.jsx";
+import { buildCaseSummary } from "../../lib/aiSummary.js";
+import { getAiDefaultOpen } from "../../lib/prefs.js";
 
 // Generic family-pension / EOP case processor.
 // Skeleton: Intimation & claim → Eligibility/Attributability → Documents → Computation → Sanction → PPO (auto by PAO).
@@ -20,10 +23,12 @@ export default function CaseProcessor({
   const [claimRef, setClaimRef] = useState("");
   const [primaryDoc, setPrimaryDoc] = useState(false);
   const [flash, setFlash] = useState("");
+  const [aiOpen, setAiOpen] = useState(getAiDefaultOpen());
   const [nf, setNf] = useState({});                      // new-case form values
   const [nfSub, setNfSub] = useState(null);              // new-case sub-type
   const [pan, setPan] = useState("");                    // PAN for EIS lookup
   const [fetchedKeys, setFetchedKeys] = useState([]);    // fields auto-filled from EIS
+  const [fetching, setFetching] = useState(false);       // EIS lookup in progress
   const sel = view.id ? rows.find((c) => c.id === view.id) : null;
   const say = (m) => { setFlash(m); setTimeout(() => setFlash(""), 2400); };
   const set = (id, step, extra = {}, hist = null) => setRows((rs) => rs.map((c) => {
@@ -33,14 +38,19 @@ export default function CaseProcessor({
   }));
   const toggle = (k) => setChecks((c) => c.includes(k) ? c.filter((x) => x !== k) : [...c, k]);
   const setN = (k, v) => setNf((s) => ({ ...s, [k]: v }));
-  const openNew = () => { setNfSub(addConfig.subtypes[0]); setNf({}); setPan(""); setFetchedKeys([]); setView({ name: "new" }); };
+  const openNew = () => { setNfSub(addConfig.subtypes[0]); setNf({}); setPan(""); setFetchedKeys([]); setFetching(false); setView({ name: "new" }); };
   const panValid = /^[A-Za-z]{5}[0-9]{4}[A-Za-z]$/.test(pan.trim());
   const fetchEis = () => {
     const sub = nfSub || addConfig.subtypes[0];
-    const data = addConfig.fetch(pan.trim().toUpperCase(), sub);
-    setNf((s) => ({ ...s, ...data, pan: pan.trim().toUpperCase() }));
-    setFetchedKeys(Object.keys(data));
-    say(`Fetched ${Object.keys(data).length} field(s) from EIS for PAN ${pan.trim().toUpperCase()}.`);
+    const cleanPan = pan.trim().toUpperCase();
+    setFetching(true);
+    setTimeout(() => {
+      const data = addConfig.fetch(cleanPan, sub);
+      setNf((s) => ({ ...s, ...data, pan: cleanPan }));
+      setFetchedKeys(Object.keys(data));
+      setFetching(false);
+      say(`Fetched ${Object.keys(data).length} field(s) from EIS for PAN ${cleanPan}.`);
+    }, 850);
   };
   const createCase = () => {
     const built = addConfig.build(nf, nfSub);
@@ -165,8 +175,25 @@ export default function CaseProcessor({
         {flash && <SuccessNote title={flash}>The case record and its history have been updated.</SuccessNote>}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Breadcrumb items={[{ label: title, onClick: () => setView({ name: "list" }) }, { label: sel.name }]} />
-          <Button variant="outline" className="px-4 py-2 text-xs" onClick={() => setView({ name: "task", id: sel.id, task: "profile" })}><Icon name="userCheck" size={14} /> View {profileLabel} profile</Button>
+          <div className="flex items-center gap-2">
+            <AiSummaryButton open={aiOpen} onToggle={() => setAiOpen((o) => !o)} />
+            <Button variant="outline" className="px-4 py-2 text-xs" onClick={() => setView({ name: "task", id: sel.id, task: "profile" })}><Icon name="userCheck" size={14} /> View {profileLabel} profile</Button>
+          </div>
         </div>
+        {aiOpen && <AiCaseSummary summary={buildCaseSummary({
+          domain: title.includes("EOP") ? "eop" : "family",
+          reference: sel.ppo || `CASE-${sel.id}`,
+          typeLabel: `${title} — ${sel.subtype}`,
+          subject: sel.relation.includes("Self") ? `${sel.name} (${sel.relation})` : `${sel.name} (${sel.relation}), beneficiary of ${sel.deceased}`,
+          why: sel.relation.includes("Self")
+            ? `It was initiated on ${(sel.event || "invalidation").toLowerCase()} attributable to government service.`
+            : `It was initiated on intimation of the ${sel.trigger ? sel.trigger.toLowerCase() : "death"} event dated ${sel.dol}.`,
+          steps,
+          current: sel.step,
+          returned: false,
+          figures: computeFor(sel).rows.slice(0, 4),
+          missing: sel.step < 2 ? ["Eligibility determination is pending.", "Supporting documents are to be verified."] : sel.step < 3 ? ["Supporting documents are to be verified."] : [],
+        })} />}
         <div className="grid gap-4 lg:grid-cols-2">
           <SectionCard title="Processing" desc="Each step captures the required data; the PPO step updates from the PAO." icon="listChecks">
             <StepList steps={steps} current={sel.step} onOpen={openCurrent} />
@@ -217,16 +244,22 @@ export default function CaseProcessor({
           <p className="mt-2 text-xs text-muted-foreground">{addConfig.hint ? addConfig.hint(sub) : ""}</p>
         </SectionCard>
 
-        <SectionCard title="Fetch from EIS" desc={`Enter the ${sub.includes("Disability") ? "employee's" : "employee / pensioner's"} PAN — the service record is fetched automatically from EIS.`} icon="badgeCheck">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="min-w-[220px] flex-1">
-              <Field label="PAN" required hint="Format: ABCDE1234F"><Input value={pan} onChange={(e) => setPan(e.target.value.toUpperCase())} placeholder="ABCPV1234L" maxLength={10} /></Field>
-            </div>
-            <Button variant="primary" className="px-5 py-2.5" disabled={!panValid} onClick={fetchEis}><Icon name="download" size={15} /> {fetched ? "Re-fetch" : "Fetch details"}</Button>
+        <SectionCard title="Fetch from EIS" desc={`Enter the ${sub.includes("Disability") ? "employee's" : "employee / pensioner's"} PAN and search — the service record is fetched automatically from EIS.`} icon="badgeCheck">
+          <label className="mb-1.5 block text-sm font-semibold text-foreground">PAN <span className="text-saffron">*</span></label>
+          <div className="flex flex-wrap items-stretch gap-3">
+            <Input value={pan} onChange={(e) => setPan(e.target.value.toUpperCase())} placeholder="ABCPV1234L" maxLength={10} className="min-w-[220px] flex-1" />
+            <Button variant="primary" className="shrink-0 px-6" disabled={!panValid || fetching} onClick={fetchEis}>
+              {fetching
+                ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> Searching…</>
+                : <><Icon name="search" size={15} /> {fetched ? "Search again" : "Search"}</>}
+            </Button>
           </div>
-          {fetched
-            ? <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-success/8 px-3 py-2 text-xs font-semibold text-success"><Icon name="check" size={13} /> {fetchedKeys.length} field(s) fetched from EIS for PAN {nf.pan}. Review them and enter the remaining details below.</p>
-            : <p className="mt-3 text-xs text-muted-foreground">Authenticated via Parichay SSO. For the demo, any valid-format PAN returns a record; the seeded PANs ABCPV1234L / PQRSM5678N / LMNOP4321Q return specific records.</p>}
+          <p className="mt-1.5 text-xs text-muted-foreground">Format: ABCDE1234F</p>
+          {fetching
+            ? <p className="mt-3 inline-flex items-center gap-2 rounded-lg bg-primary/[0.06] px-3 py-2 text-xs font-semibold text-primary"><Icon name="loader" size={13} className="animate-spin" /> Contacting EIS for PAN {pan.trim().toUpperCase()}…</p>
+            : fetched
+              ? <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-success/8 px-3 py-2 text-xs font-semibold text-success"><Icon name="check" size={13} /> {fetchedKeys.length} field(s) fetched from EIS for PAN {nf.pan}. Review them and enter the remaining details below.</p>
+              : <p className="mt-3 text-xs text-muted-foreground">Authenticated via Parichay SSO. For the demo, any valid-format PAN returns a record; the seeded PANs ABCPV1234L / PQRSM5678N / LMNOP4321Q return specific records.</p>}
         </SectionCard>
 
         {fetched && (
