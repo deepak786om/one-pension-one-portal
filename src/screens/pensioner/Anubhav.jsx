@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import ModuleShell from "./ModuleShell.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Icon from "../../lib/icons.jsx";
-import { SectionCard, Field, Select, Textarea, RadioPills, InfoRow, StatusPill } from "../../components/ui/kit.jsx";
+import { SectionCard, Field, Select, Textarea, RadioPills, InfoRow, StatusPill, Modal } from "../../components/ui/kit.jsx";
+import AnubhavDetail from "../common/AnubhavDetail.jsx";
 import { cn } from "../../lib/cn.js";
 import { ANUBHAV, ANUBHAV_CATEGORIES, ANUBHAV_SKILLS, PENSIONER } from "../../data/pensioner.js";
 
@@ -16,8 +17,114 @@ function IdentityBanner() {
   );
 }
 
+
+function anubhavWindow() {
+  const NOW = new Date("2026-06-30");
+  const dor = new Date(PENSIONER.retiredOn);
+  const open = new Date(dor); open.setMonth(open.getMonth() - 8);     // 8 months before retirement
+  const close = new Date(dor); close.setFullYear(close.getFullYear() + 3); // 3 years after retirement
+  const fmt = (d) => d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  const day = 86400000;
+  const pct = Math.max(0, Math.min(100, ((NOW - open) / (close - open)) * 100));
+  const daysLeft = Math.max(0, Math.round((close - NOW) / day));
+  return { openStr: fmt(open), closeStr: fmt(close), pct, daysLeft, weeksLeft: Math.round(daysLeft / 7), monthsLeft: Math.round(daysLeft / 30.44), closed: NOW > close };
+}
+
+const DEMO_SUB = {
+  author: PENSIONER.name, designation: PENSIONER.designation, ministry: PENSIONER.ministry,
+  office: PENSIONER.office, pan: PENSIONER.pan, ppo: PENSIONER.ppo, photo: false,
+  status: "Published", date: "12 Jun 2026", ref: "ANB-2026-0000",
+  category: "Government process re-engineering",
+  title: "Re-engineering a long-pending office process (sample)",
+  content:
+    "When I took charge of the section, a routine approval moved between several desks and often took weeks longer than it should have. " +
+    "I mapped each hand-off, removed the duplicated checks, and introduced a single shared checklist so that nothing was re-entered twice.\n\n" +
+    "We trialled the change on a small batch of cases, measured the time saved honestly, and only then rolled it out across the section. The waiting time fell sharply and, just as importantly, the change outlasted my own posting.",
+  innovation: "A one-page reconciliation checklist completed before a case leaves the desk, which cut downstream objections substantially.",
+  award: "Departmental commendation, 2023, for process improvement.",
+  leadership: "Mentored the team through the transition with short weekly reviews so they owned the new way of working.",
+  skills: ["Process re-engineering", "Team mentoring", "Citizen service"],
+  suggestions: "Standardise the checklist across comparable offices so every desk speaks the same language.",
+  volunteer: "Yes", feedbackEmail: "Yes",
+};
+
+function AnubhavStatusCard({ submitted, data }) {
+  const w = anubhavWindow();
+  const STEPS = ["Submitted", "HOO recommends", "HOD approves", "Published"];
+  const doneUpto = submitted ? 1 : 0;
+  return (
+    <SectionCard title="Your Anubhav status" desc="Where your experience stands, and how long you have to publish it." icon="bookMarked"
+      action={submitted
+        ? <span className="inline-flex items-center gap-1.5 rounded-full bg-success/12 px-3 py-1 text-xs font-bold text-success"><Icon name="badgeCheck" size={14} /> Awaiting HOO recommendation</span>
+        : <span className="inline-flex items-center gap-1.5 rounded-full bg-saffron/12 px-3 py-1 text-xs font-bold text-saffron"><Icon name="info" size={14} /> Not yet submitted</span>}>
+      <div className="flex items-start">
+        {STEPS.map((s, i) => {
+          const done = i < doneUpto, cur = submitted && i === doneUpto;
+          const color = done ? "#1B9C57" : cur ? "#E98A1E" : "#CBD5E1";
+          return (
+            <div key={s} className="flex flex-1 flex-col items-center">
+              <div className="flex w-full items-center">
+                <span className="h-0.5 flex-1" style={{ background: i === 0 ? "transparent" : (i <= doneUpto ? "#1B9C57" : "#E2E8F0") }} />
+                <span className="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full text-white" style={{ background: color }}>{done ? <Icon name="check" size={13} /> : <span className="text-[11px] font-bold">{i + 1}</span>}</span>
+                <span className="h-0.5 flex-1" style={{ background: i === STEPS.length - 1 ? "transparent" : (i < doneUpto ? "#1B9C57" : "#E2E8F0") }} />
+              </div>
+              <span className="mt-1.5 text-center text-[10.5px] font-semibold leading-tight" style={{ color: cur ? "#E98A1E" : "#64748B" }}>{s}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className={cn("mt-5 rounded-xl border p-3.5", w.closed ? "border-red-200 bg-red-50/50" : submitted ? "border-success/20 bg-success/[0.04]" : "border-saffron/25 bg-saffron/[0.06]")}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-sm text-foreground"><Icon name="clock" size={15} className="text-saffron" /> Publish by <b>{w.closeStr}</b></div>
+          <span className={cn("text-sm font-extrabold", w.closed ? "text-red-600" : "text-saffron")}>{w.closed ? "Window closed" : `~${w.weeksLeft} weeks left`}</span>
+        </div>
+        <div className="relative mt-2.5 h-2 rounded-full bg-slate-200">
+          <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: w.pct + "%", background: w.closed ? "#EF4444" : "#E98A1E" }} />
+          <span className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow" style={{ left: w.pct + "%", background: w.closed ? "#EF4444" : "#E98A1E" }} />
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">Eligibility window: 8 months before retirement to 3 years after — {w.openStr} &rarr; {w.closeStr} (a 44-month window).{submitted ? "" : " You can still publish your Anubhav."}</p>
+      </div>
+    </SectionCard>
+  );
+}
+
+function DemoModal({ open, onClose }) {
+  return (
+    <Modal open={open} onClose={onClose} maxW="max-w-3xl">
+      <div>
+        <div className="border-b border-border pb-3">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-saffron">Preview</div>
+          <h3 className="text-lg font-black text-foreground">How your Anubhav will appear once published</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">A sample using your profile identity — this is how your HOO, HOD and the public Anubhav portal will see it.</p>
+        </div>
+        <div className="my-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-success/[0.06] p-2.5">
+          {["Submitted", "HOO recommended", "HOD approved", "Published"].map((s, i, arr) => (
+            <div key={s} className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-success"><Icon name="check" size={12} /> {s}</span>
+              {i < arr.length - 1 && <Icon name="chevronRight" size={12} className="text-success/50" />}
+            </div>
+          ))}
+        </div>
+        <div className="max-h-[58vh] space-y-6 overflow-y-auto pr-1">
+          <AnubhavDetail sub={DEMO_SUB} />
+        </div>
+        <div className="mt-4 flex justify-end border-t border-border pt-3">
+          <Button variant="outline" className="px-4 py-2" onClick={onClose}>Close preview</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export default function Anubhav({ onBack }) {
   const [submitted, setSubmitted] = useState(ANUBHAV.submitted);
+  const [demo, setDemo] = useState(false);
+  const seeDemo = (
+    <button onClick={() => setDemo(true)} className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5 text-sm font-bold text-primary transition-colors hover:bg-primary/10">
+      <Icon name="eye" size={16} /> See demo
+    </button>
+  );
   const [data, setData] = useState(null); // snapshot shown after submit
   const [form, setForm] = useState({ category: "", content: "", innovation: "", award: "", leadership: "", suggestions: "", volunteer: "", feedbackEmail: "" });
   const [skills, setSkills] = useState([]);
@@ -41,7 +148,9 @@ export default function Anubhav({ onBack }) {
   if (submitted) {
     const d = data || { category: "Government process re-engineering", content: "Your write-up has been recorded and forwarded to your Head of Office.", skills: [], ref: "ANB-2026-0000", date: "Today" };
     return (
-      <ModuleShell icon="bookOpen" title="Anubhav — Your Experience" desc="Your service experience, submitted to the National Anubhav Awards Scheme." onBack={onBack}>
+      <ModuleShell icon="bookOpen" title="Anubhav — Your Experience" desc="Your service experience, submitted to the National Anubhav Awards Scheme." onBack={onBack} action={seeDemo}>
+        <AnubhavStatusCard submitted data={d} />
+        <DemoModal open={demo} onClose={() => setDemo(false)} />
         <SectionCard title="Your Anubhav write-up" icon="bookMarked"
           action={<span className="inline-flex items-center gap-1.5 rounded-full bg-success/12 px-3 py-1 text-xs font-bold text-success"><Icon name="badgeCheck" size={14} /> Submitted</span>}>
           <div className="grid gap-x-8 sm:grid-cols-2">
@@ -87,7 +196,9 @@ export default function Anubhav({ onBack }) {
   }
 
   return (
-    <ModuleShell icon="bookOpen" title="Anubhav — Share Your Experience" desc="Publish your service experience under the National Anubhav Awards Scheme." onBack={onBack}>
+    <ModuleShell icon="bookOpen" title="Anubhav — Share Your Experience" desc="Publish your service experience under the National Anubhav Awards Scheme." onBack={onBack} action={seeDemo}>
+      <AnubhavStatusCard submitted={false} />
+      <DemoModal open={demo} onClose={() => setDemo(false)} />
       <SectionCard title="Anubhav write-up" desc="One write-up per retirement. Fields marked * are required." icon="bookOpen">
         <div className="grid gap-4">
           <IdentityBanner />
