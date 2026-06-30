@@ -216,32 +216,31 @@ function PensionForecast() {
   return (
     <div className="overflow-hidden rounded-xl2 border border-slate-200 bg-white shadow-card">
       {/* SHIMMER NAVY HEADER */}
-      <div className="ai-sheen flex items-center gap-3 bg-gradient-to-r from-[#061B3D] to-[#0B2A55] px-5 py-3.5 text-white">
+      <div className="ai-sheen flex flex-wrap items-center gap-x-4 gap-y-3 bg-gradient-to-r from-[#061B3D] to-[#0B2A55] px-5 py-3.5 text-white">
         <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 shadow"><Icon name="sparkles" size={18} /></span>
         <div className="min-w-0">
           <div className="text-[15px] font-extrabold leading-tight">AI Pension Forecast</div>
           <div className="truncate text-[11.5px] text-cyan-100/70">Projected to 2056 — received so far (solid), AI projection (dashed)</div>
         </div>
+        <div className="inline-flex rounded-xl border border-white/20 bg-white/10 p-1 backdrop-blur-sm">
+          {[["cum", "Total received"], ["month", "Per month"]].map(([k, l]) => (
+            <button key={k} onClick={() => setMode(k)} className={cn("rounded-lg px-3.5 py-1.5 text-[12.5px] font-bold transition-all", mode === k ? "bg-white text-[#0B2A55] shadow" : "text-cyan-100/80 hover:text-white")}>{l}</button>
+          ))}
+        </div>
+        <span className="ml-auto hidden text-[11px] text-cyan-100/60 lg:block">{isCum ? "Cumulative pension received up to each year" : "Monthly pension in each year"}</span>
       </div>
 
       <div className="p-4">
-        {/* TOGGLE */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
-            {[["cum", "Total received"], ["month", "Per month"]].map(([k, l]) => (
-              <button key={k} onClick={() => setMode(k)} className={cn("rounded-lg px-3.5 py-1.5 text-[13px] font-bold transition-all", mode === k ? "bg-gradient-to-br from-[#0B2A55] to-[#1B63E8] text-white shadow-soft" : "text-slate-500 hover:text-slate-700")}>{l}</button>
-            ))}
-          </div>
-          <span className="text-[11px] text-slate-400">{isCum ? "Cumulative pension received up to each year" : "Monthly pension in each year"}</span>
-        </div>
-
-        {/* KPI STATS — ABOVE GRAPH, vibrant */}
-        <div className="mt-4 grid gap-3 sm:grid-cols-4">
+        {/* KPI STATS — ABOVE GRAPH, modern light-gradient cards */}
+        <div className="grid gap-3 sm:grid-cols-4">
           {KP.map((k) => (
-            <div key={k.n} className="rounded-xl border border-slate-200 border-t-4 bg-white p-3.5" style={{ borderTopColor: k.color }}>
-              <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">In {k.n} years</div>
-              <div className="mt-1 text-lg font-black" style={{ color: k.color }}>{fINR(k.value)}</div>
-              <div className="text-[11px] text-muted-foreground">{k.sub}</div>
+            <div key={k.n} className="relative overflow-hidden rounded-2xl p-4 shadow-sm transition-shadow hover:shadow-md" style={{ background: `linear-gradient(135deg, ${k.color}1F 0%, #ffffff 72%)`, border: `1px solid ${k.color}33` }}>
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">In {k.n} years</span>
+                <span className="grid h-7 w-7 place-items-center rounded-lg" style={{ background: `${k.color}22`, color: k.color }}><Icon name="arrowUpRight" size={14} /></span>
+              </div>
+              <div className="mt-2 text-[22px] font-black leading-none" style={{ color: k.color }}>{fINR(k.value)}</div>
+              <div className="mt-1.5 text-[11px] text-slate-500">{k.sub}</div>
             </div>
           ))}
         </div>
