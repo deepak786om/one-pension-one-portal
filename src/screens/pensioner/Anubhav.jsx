@@ -3,8 +3,7 @@ import { motion } from "framer-motion";
 import ModuleShell from "./ModuleShell.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Icon from "../../lib/icons.jsx";
-import { SectionCard, Field, Select, Textarea, RadioPills, InfoRow, StatusPill, Modal } from "../../components/ui/kit.jsx";
-import AnubhavDetail from "../common/AnubhavDetail.jsx";
+import { SectionCard, Field, Select, Textarea, RadioPills, InfoRow, StatusPill } from "../../components/ui/kit.jsx";
 import { cn } from "../../lib/cn.js";
 import { ANUBHAV, ANUBHAV_CATEGORIES, ANUBHAV_SKILLS, PENSIONER } from "../../data/pensioner.js";
 
@@ -48,7 +47,7 @@ const DEMO_SUB = {
   volunteer: "Yes", feedbackEmail: "Yes",
 };
 
-function AnubhavStatusCard({ submitted, data }) {
+function AnubhavStatusCard({ submitted, data, onSimulate }) {
   const w = anubhavWindow();
   const STEPS = ["Submitted", "HOO recommends", "HOD approves", "Published"];
   const doneUpto = submitted ? 1 : 0;
@@ -85,46 +84,17 @@ function AnubhavStatusCard({ submitted, data }) {
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">Eligibility window: 8 months before retirement to 3 years after — {w.openStr} &rarr; {w.closeStr} (a 44-month window).{submitted ? "" : " You can still publish your Anubhav."}</p>
       </div>
+      {!submitted && onSimulate && (
+        <button onClick={onSimulate} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-primary/40 bg-primary/[0.03] px-4 py-2.5 text-xs font-bold text-primary transition-colors hover:bg-primary/[0.07]">
+          <Icon name="repeat" size={14} /> Demo: Simulate submission
+        </button>
+      )}
     </SectionCard>
-  );
-}
-
-function DemoModal({ open, onClose }) {
-  return (
-    <Modal open={open} onClose={onClose} maxW="max-w-3xl">
-      <div>
-        <div className="border-b border-border pb-3">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-saffron">Preview</div>
-          <h3 className="text-lg font-black text-foreground">How your Anubhav will appear once published</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">A sample using your profile identity — this is how your HOO, HOD and the public Anubhav portal will see it.</p>
-        </div>
-        <div className="my-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-success/[0.06] p-2.5">
-          {["Submitted", "HOO recommended", "HOD approved", "Published"].map((s, i, arr) => (
-            <div key={s} className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-success"><Icon name="check" size={12} /> {s}</span>
-              {i < arr.length - 1 && <Icon name="chevronRight" size={12} className="text-success/50" />}
-            </div>
-          ))}
-        </div>
-        <div className="max-h-[58vh] space-y-6 overflow-y-auto pr-1">
-          <AnubhavDetail sub={DEMO_SUB} />
-        </div>
-        <div className="mt-4 flex justify-end border-t border-border pt-3">
-          <Button variant="outline" className="px-4 py-2" onClick={onClose}>Close preview</Button>
-        </div>
-      </div>
-    </Modal>
   );
 }
 
 export default function Anubhav({ onBack }) {
   const [submitted, setSubmitted] = useState(ANUBHAV.submitted);
-  const [demo, setDemo] = useState(false);
-  const seeDemo = (
-    <button onClick={() => setDemo(true)} className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5 text-sm font-bold text-primary transition-colors hover:bg-primary/10">
-      <Icon name="eye" size={16} /> See demo
-    </button>
-  );
   const [data, setData] = useState(null); // snapshot shown after submit
   const [form, setForm] = useState({ category: "", content: "", innovation: "", award: "", leadership: "", suggestions: "", volunteer: "", feedbackEmail: "" });
   const [skills, setSkills] = useState([]);
@@ -145,12 +115,22 @@ export default function Anubhav({ onBack }) {
     setSubmitted(true);
   };
 
+  const simulateSubmit = () => {
+    setData({
+      category: DEMO_SUB.category, content: DEMO_SUB.content, innovation: DEMO_SUB.innovation,
+      award: DEMO_SUB.award, leadership: DEMO_SUB.leadership, suggestions: DEMO_SUB.suggestions,
+      skills: [...DEMO_SUB.skills], volunteer: DEMO_SUB.volunteer, feedbackEmail: DEMO_SUB.feedbackEmail,
+      ref: "ANB-2026-" + Math.floor(1000 + Math.random() * 8999),
+      date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+    });
+    setSubmitted(true);
+  };
+
   if (submitted) {
     const d = data || { category: "Government process re-engineering", content: "Your write-up has been recorded and forwarded to your Head of Office.", skills: [], ref: "ANB-2026-0000", date: "Today" };
     return (
-      <ModuleShell icon="bookOpen" title="Anubhav — Your Experience" desc="Your service experience, submitted to the National Anubhav Awards Scheme." onBack={onBack} action={seeDemo}>
+      <ModuleShell icon="bookOpen" title="Anubhav — Your Experience" desc="Your service experience, submitted to the National Anubhav Awards Scheme." onBack={onBack}>
         <AnubhavStatusCard submitted data={d} />
-        <DemoModal open={demo} onClose={() => setDemo(false)} />
         <SectionCard title="Your Anubhav write-up" icon="bookMarked"
           action={<span className="inline-flex items-center gap-1.5 rounded-full bg-success/12 px-3 py-1 text-xs font-bold text-success"><Icon name="badgeCheck" size={14} /> Submitted</span>}>
           <div className="grid gap-x-8 sm:grid-cols-2">
@@ -196,9 +176,8 @@ export default function Anubhav({ onBack }) {
   }
 
   return (
-    <ModuleShell icon="bookOpen" title="Anubhav — Share Your Experience" desc="Publish your service experience under the National Anubhav Awards Scheme." onBack={onBack} action={seeDemo}>
-      <AnubhavStatusCard submitted={false} />
-      <DemoModal open={demo} onClose={() => setDemo(false)} />
+    <ModuleShell icon="bookOpen" title="Anubhav — Share Your Experience" desc="Publish your service experience under the National Anubhav Awards Scheme." onBack={onBack}>
+      <AnubhavStatusCard submitted={false} onSimulate={simulateSubmit} />
       <SectionCard title="Anubhav write-up" desc="One write-up per retirement. Fields marked * are required." icon="bookOpen">
         <div className="grid gap-4">
           <IdentityBanner />
