@@ -2,7 +2,7 @@ import { useState } from "react";
 import ModuleShell from "../pensioner/ModuleShell.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Icon from "../../lib/icons.jsx";
-import { SectionCard, KPI, StatusPill, DataTable, Field, Textarea, Select, SuccessNote, HistoryTrail, Breadcrumb } from "../../components/ui/kit.jsx";
+import { SectionCard, KPI, StatusPill, DataTable, Field, Textarea, Select, SuccessNote, HistoryTrail, Breadcrumb, InfoRow } from "../../components/ui/kit.jsx";
 import { GO_QUEUE, ACTION_CODES } from "../../data/grievance.js";
 import AiContentInsight from "../../components/ui/AiContentInsight.jsx";
 import { AiSummaryButton } from "../../components/ui/AiCaseSummary.jsx";
@@ -42,17 +42,33 @@ export default function GrievanceQueue({ onBack }) {
           <KPI label="SLA" value={sel.sla} icon="activity" tone={sel.sla.includes("Overdue") ? "saffron" : "primary"} />
           <KPI label="Status" value={sel.status} icon="info" tone={sel.status === "Disposed" ? "success" : "primary"} />
         </div>
-        <SectionCard title="History" icon="activity"><HistoryTrail items={sel.history} /></SectionCard>
-        {sel.status !== "Disposed" && (
-          <SectionCard title="Take action" desc="Record a coded action on this grievance." icon="scale">
-            <Field label="Action"><Select options={ACTION_CODES.map((c) => `${c.code} — ${c.label}`)} value={`${code} — ${ACTION_CODES.find((c) => c.code === code).label}`} onChange={(e) => setCode(e.target.value.split(" — ")[0])} /></Field>
-            {code === "4A" && <Field label="Forward to office" required><Select options={["SBI Pension Cell", "PAO (NR) Delhi", "CGHS Wellness Centre", "Head of Office (NR)"]} value={office} onChange={(e) => setOffice(e.target.value)} /></Field>}
-            {code !== "4A" && <Field label={code === "10" ? "Action Taken Report (reply)" : "Clarification sought"} required><Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={code === "10" ? "Describe the resolution…" : "What clarification is required from the complainant?"} /></Field>}
-            <div className="mt-3 flex gap-2">
-              <Button variant="saffron" disabled={code === "4A" ? !office : text.trim().length < 6} onClick={act}><Icon name="arrowRight" size={16} /> Record Action {code}</Button>
-              <Button variant="outline" onClick={() => setOpenId(null)}>Cancel</Button>
-            </div>
-          </SectionCard>
+        <SectionCard title="Grievance details" icon="info">
+          <div className="grid gap-x-8 sm:grid-cols-2">
+            <InfoRow label="Registration no." value={<span className="font-mono">{sel.regNo}</span>} />
+            <InfoRow label="From" value={sel.from} />
+            <InfoRow label="Category" value={sel.category} />
+            <InfoRow label="Subject" value={sel.subject} />
+            <InfoRow label="Lodged on" value={sel.lodged} />
+            <InfoRow label="SLA" value={sel.sla} />
+            <InfoRow label="Status" value={sel.status} />
+            {sel.atr && <InfoRow label="Action Taken Report" value={sel.atr} />}
+          </div>
+        </SectionCard>
+        {sel.status !== "Disposed" ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <SectionCard title="History" icon="activity"><HistoryTrail items={sel.history} /></SectionCard>
+            <SectionCard title="Take action" desc="Record a coded action on this grievance." icon="scale">
+              <Field label="Action"><Select options={ACTION_CODES.map((c) => `${c.code} — ${c.label}`)} value={`${code} — ${ACTION_CODES.find((c) => c.code === code).label}`} onChange={(e) => setCode(e.target.value.split(" — ")[0])} /></Field>
+              {code === "4A" && <Field label="Forward to office" required><Select options={["SBI Pension Cell", "PAO (NR) Delhi", "CGHS Wellness Centre", "Head of Office (NR)"]} value={office} onChange={(e) => setOffice(e.target.value)} /></Field>}
+              {code !== "4A" && <Field label={code === "10" ? "Action Taken Report (reply)" : "Clarification sought"} required><Textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={code === "10" ? "Describe the resolution…" : "What clarification is required from the complainant?"} /></Field>}
+              <div className="mt-3 flex gap-2">
+                <Button variant="saffron" disabled={code === "4A" ? !office : text.trim().length < 6} onClick={act}><Icon name="arrowRight" size={16} /> Record Action {code}</Button>
+                <Button variant="outline" onClick={() => setOpenId(null)}>Cancel</Button>
+              </div>
+            </SectionCard>
+          </div>
+        ) : (
+          <SectionCard title="History" icon="activity"><HistoryTrail items={sel.history} /></SectionCard>
         )}
       </ModuleShell>
     );

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ModuleShell from "../pensioner/ModuleShell.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Icon from "../../lib/icons.jsx";
-import { SectionCard, StatusPill, Field, Textarea, SuccessNote, Breadcrumb } from "../../components/ui/kit.jsx";
+import { SectionCard, StatusPill, Field, Textarea, SuccessNote, Breadcrumb, KPI, InfoRow } from "../../components/ui/kit.jsx";
 import { HOO_GRIEVANCES } from "../../data/hoo.js";
 import AiContentInsight from "../../components/ui/AiContentInsight.jsx";
 import { AiSummaryButton } from "../../components/ui/AiCaseSummary.jsx";
@@ -35,27 +35,57 @@ export default function OfficeGrievances({ onBack }) {
           <AiSummaryButton open={aiOpen} onToggle={() => setAiOpen((o) => !o)} />
         </div>
         {aiOpen && <AiContentInsight summary={buildGrievanceSummary({ ...sel, category: sel.category || "Pension processing" })} />}
-        <SectionCard title="History" icon="activity" action={<StatusPill>{sel.status}</StatusPill>}>
-          <ol className="relative ml-3 border-l-2 border-border">
-            {sel.history.map((h, i) => (
-              <li key={i} className="mb-4 ml-5 last:mb-0">
-                <span className="absolute -left-[0.65rem] grid h-5 w-5 place-items-center rounded-full bg-primary text-white ring-4 ring-card"><Icon name="check" size={11} /></span>
-                <div className="flex flex-wrap items-center gap-x-2"><span className="text-sm font-bold text-foreground">{h.action}</span><span className="text-[11px] text-muted-foreground">· {h.date}</span></div>
-                <div className="text-xs font-medium text-primary">{h.actor}</div>
-                {h.remark && <p className="mt-0.5 text-xs text-muted-foreground">{h.remark}</p>}
-              </li>
-            ))}
-          </ol>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <KPI label="From" value={sel.from} icon="userCheck" tone="primary" />
+          <KPI label="SLA" value={sel.sla} icon="activity" tone={sel.sla.includes("Overdue") ? "saffron" : "primary"} />
+          <KPI label="Status" value={sel.status} icon="info" tone={sel.status === "Resolved" ? "success" : "primary"} />
+        </div>
+        <SectionCard title="Grievance details" icon="info">
+          <div className="grid gap-x-8 sm:grid-cols-2">
+            <InfoRow label="Registration no." value={<span className="font-mono">{sel.regNo}</span>} />
+            <InfoRow label="From" value={sel.from} />
+            <InfoRow label="Category" value={sel.category || "Pension processing"} />
+            <InfoRow label="Subject" value={sel.subject} />
+            <InfoRow label="Lodged on" value={sel.lodged} />
+            <InfoRow label="SLA" value={sel.sla} />
+          </div>
         </SectionCard>
-        {sel.status === "Open" && (
-          <SectionCard title="Action Taken Report" desc="Record your action to dispose this grievance." icon="fileCheck">
-            <Field label="Action taken / reply" required>
-              <Textarea value={atr} onChange={(e) => setAtr(e.target.value)} placeholder="Describe the action taken and resolution…" className="min-h-[110px]" />
-            </Field>
-            <div className="mt-3 flex gap-2">
-              <Button variant="saffron" disabled={atr.trim().length < 10} onClick={resolve}><Icon name="check" size={16} /> {atr.trim().length < 10 ? "Add your ATR" : "Resolve with ATR"}</Button>
-              <Button variant="outline" onClick={() => setOpenId(null)}>Cancel</Button>
-            </div>
+        {sel.status === "Open" ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <SectionCard title="History" icon="activity">
+              <ol className="relative ml-3 border-l-2 border-border">
+                {sel.history.map((h, i) => (
+                  <li key={i} className="mb-4 ml-5 last:mb-0">
+                    <span className="absolute -left-[0.65rem] grid h-5 w-5 place-items-center rounded-full bg-primary text-white ring-4 ring-card"><Icon name="check" size={11} /></span>
+                    <div className="flex flex-wrap items-center gap-x-2"><span className="text-sm font-bold text-foreground">{h.action}</span><span className="text-[11px] text-muted-foreground">· {h.date}</span></div>
+                    <div className="text-xs font-medium text-primary">{h.actor}</div>
+                    {h.remark && <p className="mt-0.5 text-xs text-muted-foreground">{h.remark}</p>}
+                  </li>
+                ))}
+              </ol>
+            </SectionCard>
+            <SectionCard title="Take action" desc="Record your action to dispose this grievance." icon="scale">
+              <Field label="Action taken / reply" required>
+                <Textarea value={atr} onChange={(e) => setAtr(e.target.value)} placeholder="Describe the action taken and resolution…" className="min-h-[110px]" />
+              </Field>
+              <div className="mt-3 flex gap-2">
+                <Button variant="saffron" disabled={atr.trim().length < 10} onClick={resolve}><Icon name="check" size={16} /> {atr.trim().length < 10 ? "Add your ATR" : "Resolve with ATR"}</Button>
+                <Button variant="outline" onClick={() => setOpenId(null)}>Cancel</Button>
+              </div>
+            </SectionCard>
+          </div>
+        ) : (
+          <SectionCard title="History" icon="activity" action={<StatusPill tone="ok">{sel.status}</StatusPill>}>
+            <ol className="relative ml-3 border-l-2 border-border">
+              {sel.history.map((h, i) => (
+                <li key={i} className="mb-4 ml-5 last:mb-0">
+                  <span className="absolute -left-[0.65rem] grid h-5 w-5 place-items-center rounded-full bg-primary text-white ring-4 ring-card"><Icon name="check" size={11} /></span>
+                  <div className="flex flex-wrap items-center gap-x-2"><span className="text-sm font-bold text-foreground">{h.action}</span><span className="text-[11px] text-muted-foreground">· {h.date}</span></div>
+                  <div className="text-xs font-medium text-primary">{h.actor}</div>
+                  {h.remark && <p className="mt-0.5 text-xs text-muted-foreground">{h.remark}</p>}
+                </li>
+              ))}
+            </ol>
           </SectionCard>
         )}
       </ModuleShell>

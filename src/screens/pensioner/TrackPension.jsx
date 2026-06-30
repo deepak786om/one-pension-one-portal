@@ -179,43 +179,74 @@ function PensionForecast() {
   const curMonthly = PAYMENTS[0].gross;            // current monthly gross (basic + DR)
   const g = 1.04;                                   // indicative ~4%/yr via DR revisions
   const monthlyAt = (y) => Math.round(curMonthly * Math.pow(g, y - NOW));
+  const [hi, setHi] = useState(null);               // hovered year index
   const data = [];
-  for (let y = START; y <= END; y++) data.push({ y, annual: monthlyAt(y) * 12, received: y <= NOW });
+  for (let y = START; y <= END; y++) data.push({ y, m: monthlyAt(y), received: y <= NOW });
 
-  const W = 720, H = 220, pad = { t: 16, r: 16, b: 30, l: 16 };
+  const W = 720, H = 244, pad = { t: 18, r: 18, b: 30, l: 58 };
   const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
-  const maxA = Math.max(...data.map((d) => d.annual)) * 1.06;
+  const maxA = Math.max(...data.map((d) => d.m)) * 1.08;
   const X = (y) => pad.l + ((y - START) / (END - START)) * iw;
   const Y = (a) => pad.t + ih - (a / maxA) * ih;
-  const line = (pts) => pts.map((d, i) => (i ? "L" : "M") + X(d.y).toFixed(1) + " " + Y(d.annual).toFixed(1)).join(" ");
+  const line = (pts) => pts.map((d, i) => (i ? "L" : "M") + X(d.y).toFixed(1) + " " + Y(d.m).toFixed(1)).join(" ");
   const past = data.filter((d) => d.y <= NOW);
   const future = data.filter((d) => d.y >= NOW);
   const areaAll = line(data) + ` L ${X(END).toFixed(1)} ${(pad.t + ih)} L ${X(START).toFixed(1)} ${(pad.t + ih)} Z`;
-  const grid = [0.25, 0.5, 0.75].map((f) => pad.t + ih - f * ih);
+  const gridF = [0.25, 0.5, 0.75, 1];
   const ticks = [2024, 2034, 2044, 2056];
-
-  const lifetime = future.reduce((s, d) => s + d.annual, 0);
+  const band = iw / (data.length - 1);
+  const hd = hi != null ? data[hi] : null;
   const fINR = (n) => formatINR(n);
+  const kfmt = (n) => n >= 100000 ? "\u20B9" + (n / 100000).toFixed(n >= 1000000 ? 0 : 1) + "L" : "\u20B9" + Math.round(n / 1000) + "k";
+  const lifetime = future.reduce((s, d) => s + d.m * 12, 0);
 
   return (
     <div>
       <div className="relative w-full overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-3">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: "auto" }} role="img" aria-label="30-year pension forecast">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: "auto" }} role="img" aria-label="30-year pension forecast" onMouseLeave={() => setHi(null)}>
           <defs>
             <linearGradient id="fcA" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#00C896" stopOpacity="0.28" /><stop offset="100%" stopColor="#00C896" stopOpacity="0.02" /></linearGradient>
           </defs>
-          {grid.map((gy, i) => <line key={i} x1={pad.l} y1={gy} x2={W - pad.r} y2={gy} stroke="#E2E8F0" strokeWidth="1" />)}
+          {/* y-axis gridlines + value labels */}
+          {gridF.map((fr, i) => { const gy = pad.t + ih - fr * ih; return (
+            <g key={i}>
+              <line x1={pad.l} y1={gy} x2={W - pad.r} y2={gy} stroke="#E2E8F0" strokeWidth="1" />
+              <text x={pad.l - 8} y={gy + 3} fontSize="10" fill="#94A3B8" textAnchor="end">{kfmt(fr * maxA)}</text>
+            </g>
+          ); })}
+          <text x={14} y={pad.t + ih / 2} fontSize="10" fill="#94A3B8" textAnchor="middle" transform={`rotate(-90 14 ${pad.t + ih / 2})`}>{"\u20B9 / month"}</text>
           <path d={areaAll} fill="url(#fcA)" />
           <path d={line(past)} fill="none" stroke="#00C896" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
           <path d={line(future)} fill="none" stroke="#7A5AF8" strokeWidth="3" strokeDasharray="2 7" strokeLinecap="round" strokeLinejoin="round" />
+          {/* data points (small) */}
+          {data.filter((d) => d.y % 2 === 0).map((d) => <circle key={d.y} cx={X(d.y)} cy={Y(d.m)} r="2.4" fill={d.received ? "#00C896" : "#7A5AF8"} opacity="0.55" />)}
+          {/* Now marker */}
           <line x1={X(NOW)} y1={pad.t} x2={X(NOW)} y2={pad.t + ih} stroke="#94A3B8" strokeWidth="1" strokeDasharray="3 3" />
-          <circle cx={X(NOW)} cy={Y(monthlyAt(NOW) * 12)} r="4.5" fill="#fff" stroke="#00C896" strokeWidth="2" />
-          <text x={X(NOW) + 4} y={pad.t + 10} fontSize="10" fill="#64748B" fontWeight="700">Now</text>
+          <circle cx={X(NOW)} cy={Y(monthlyAt(NOW))} r="4.5" fill="#fff" stroke="#00C896" strokeWidth="2" />
+          <text x={X(NOW) + 4} y={pad.t + 8} fontSize="10" fill="#64748B" fontWeight="700">Now</text>
+          {/* x ticks */}
           {ticks.map((t) => <text key={t} x={X(t)} y={H - 8} fontSize="10" fill="#94A3B8" textAnchor={t === 2024 ? "start" : t === 2056 ? "end" : "middle"}>{t}</text>)}
+          {/* hover guide + dot + tooltip */}
+          {hd && (() => {
+            const hx = X(hd.y), hy = Y(hd.m), col = hd.received ? "#00C896" : "#7A5AF8";
+            const bw = 116, bh = 38; let bx = hx - bw / 2; bx = Math.max(pad.l, Math.min(bx, W - pad.r - bw)); let by = hy - bh - 10; if (by < pad.t) by = hy + 12;
+            return (
+              <g>
+                <line x1={hx} y1={pad.t} x2={hx} y2={pad.t + ih} stroke={col} strokeWidth="1" strokeDasharray="2 3" opacity="0.7" />
+                <circle cx={hx} cy={hy} r="5.5" fill="#fff" stroke={col} strokeWidth="2.5" />
+                <rect x={bx} y={by} width={bw} height={bh} rx="8" fill="#061B3D" />
+                <text x={bx + bw / 2} y={by + 15} fontSize="10.5" fill="#9DCBFF" textAnchor="middle" fontWeight="700">{hd.y}{hd.received ? " \u00B7 received" : " \u00B7 projected"}</text>
+                <text x={bx + bw / 2} y={by + 30} fontSize="13" fill="#fff" textAnchor="middle" fontWeight="800">{fINR(hd.m)}/mo</text>
+              </g>
+            );
+          })()}
+          {/* invisible hover bands (on top) */}
+          {data.map((d, i) => <rect key={"b" + i} x={X(d.y) - band / 2} y={pad.t} width={band} height={ih} fill="transparent" onMouseEnter={() => setHi(i)} style={{ cursor: "crosshair" }} />)}
         </svg>
-        <div className="mt-1 flex flex-wrap gap-4 px-1 text-[12px] text-muted-foreground">
+        <div className="mt-1 flex flex-wrap items-center gap-4 px-1 text-[12px] text-muted-foreground">
           <span className="flex items-center gap-1.5"><span className="inline-block h-1 w-5 rounded bg-[#00C896]" /> Received (to date)</span>
           <span className="flex items-center gap-1.5"><span className="inline-block h-1 w-5 rounded" style={{ background: "repeating-linear-gradient(90deg,#7A5AF8 0 3px,transparent 3px 7px)" }} /> AI projection (dashed)</span>
+          <span className="ml-auto hidden text-[11px] text-slate-400 sm:block">Hover the chart to read any year</span>
         </div>
       </div>
 

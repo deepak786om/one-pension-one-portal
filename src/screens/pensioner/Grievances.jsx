@@ -5,7 +5,7 @@ import Button from "../../components/ui/Button.jsx";
 import Icon from "../../lib/icons.jsx";
 import {
   SectionCard, Field, Select, Input, Textarea, StatusPill, SuccessNote,
-  Breadcrumb, RadioPills, StarRating,
+  Breadcrumb, RadioPills, StarRating, Modal, InfoRow,
 } from "../../components/ui/kit.jsx";
 import {
   GRIEVANCE_CATEGORIES, GRIEVANCE_PERTAINS, PENSION_TYPES, GRIEVANCES, PENSIONER, newGrievanceRegNo,
@@ -55,6 +55,7 @@ function HistoryTimeline({ items, accent = "primary" }) {
 export default function Grievances({ onBack }) {
   const [list, setList] = useState(GRIEVANCES);
   const [view, setView] = useState({ name: "list" });
+  const [modal, setModal] = useState(null); // grievance shown in the details popup
   const sel = view.g ? list.find((g) => g.id === view.g) : null;
 
   // lodge form
@@ -134,6 +135,9 @@ export default function Grievances({ onBack }) {
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2 border-t border-border/70 pt-3">
+                    <button onClick={() => setModal(g)} className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10">
+                      <Icon name="search" size={14} /> View details
+                    </button>
                     <button onClick={() => setView({ name: "history", g: g.id })} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:border-primary/40">
                       <Icon name="listChecks" size={14} /> Tracking history
                     </button>
@@ -280,6 +284,54 @@ export default function Grievances({ onBack }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ---------------- VIEW DETAILS POPUP ---------------- */}
+      <Modal open={!!modal} onClose={() => setModal(null)} maxW="max-w-lg">
+        {modal && (
+          <div>
+            <div className="border-b border-border pb-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-xs font-semibold text-primary">{modal.regNo}</span>
+                <StatusPill>{modal.status}</StatusPill>
+                {modal.onBehalf && <span className="rounded-full bg-primary/8 px-2 py-0.5 text-[10px] font-bold text-primary">On behalf · {modal.onBehalf.relation}</span>}
+              </div>
+              <h3 className="mt-1.5 text-lg font-black text-foreground">{modal.subject}</h3>
+            </div>
+            <div className="mt-3 grid gap-x-8 sm:grid-cols-2">
+              <InfoRow label="Category" value={modal.category} />
+              <InfoRow label="Pertains to" value={modal.pertains || "—"} />
+              <InfoRow label="Pension type" value={modal.pensionType || "—"} />
+              <InfoRow label="Lodged" value={modal.lodged} />
+              <InfoRow label="SLA" value={modal.sla} />
+              <InfoRow label="Status" value={modal.status} />
+            </div>
+            {modal.onBehalf && (
+              <div className="mt-2 rounded-xl bg-muted/40 p-3 text-xs">
+                <span className="font-bold text-foreground">On behalf of {modal.onBehalf.name}</span> ({modal.onBehalf.relation}) · PPO {modal.onBehalf.ppo} · {modal.onBehalf.bank}
+              </div>
+            )}
+            <div className="mt-4">
+              <div className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Latest activity</div>
+              <div className="max-h-[34vh] space-y-2 overflow-y-auto">
+                {[...modal.history].reverse().map((h, i) => (
+                  <div key={i} className="rounded-xl border border-border bg-card p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-sm font-bold text-foreground">{h.action}</span>
+                      <span className="text-[11px] text-muted-foreground">{h.date}</span>
+                    </div>
+                    <div className="mt-0.5 text-xs font-semibold text-primary">{h.actor}</div>
+                    {h.remark && <p className="mt-1 text-xs text-muted-foreground">{h.remark}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-3">
+              <Button variant="saffron" className="px-4 py-2" onClick={() => { const id = modal.id; setModal(null); setView({ name: "history", g: id }); }}><Icon name="listChecks" size={15} /> Full tracking history</Button>
+              <Button variant="outline" className="px-4 py-2" onClick={() => setModal(null)}>Close</Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </ModuleShell>
   );
 }
