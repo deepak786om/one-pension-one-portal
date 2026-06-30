@@ -222,25 +222,21 @@ function PensionForecast() {
           <div className="text-[15px] font-extrabold leading-tight">AI Pension Forecast</div>
           <div className="truncate text-[11.5px] text-cyan-100/70">Projected to 2056 — received so far (solid), AI projection (dashed)</div>
         </div>
-        <div className="inline-flex rounded-xl border border-white/20 bg-white/10 p-1 backdrop-blur-sm">
+        <div className="ml-auto inline-flex rounded-xl border border-white/20 bg-white/10 p-1 backdrop-blur-sm">
           {[["cum", "Total received"], ["month", "Per month"]].map(([k, l]) => (
             <button key={k} onClick={() => setMode(k)} className={cn("rounded-lg px-3.5 py-1.5 text-[12.5px] font-bold transition-all", mode === k ? "bg-white text-[#0B2A55] shadow" : "text-cyan-100/80 hover:text-white")}>{l}</button>
           ))}
         </div>
-        <span className="ml-auto hidden text-[11px] text-cyan-100/60 lg:block">{isCum ? "Cumulative pension received up to each year" : "Monthly pension in each year"}</span>
       </div>
 
       <div className="p-4">
-        {/* KPI STATS — ABOVE GRAPH, modern light-gradient cards */}
+        {/* KPI STATS — ABOVE GRAPH, compact modern light-gradient cards */}
         <div className="grid gap-3 sm:grid-cols-4">
           {KP.map((k) => (
-            <div key={k.n} className="relative overflow-hidden rounded-2xl p-4 shadow-sm transition-shadow hover:shadow-md" style={{ background: `linear-gradient(135deg, ${k.color}1F 0%, #ffffff 72%)`, border: `1px solid ${k.color}33` }}>
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">In {k.n} years</span>
-                <span className="grid h-7 w-7 place-items-center rounded-lg" style={{ background: `${k.color}22`, color: k.color }}><Icon name="arrowUpRight" size={14} /></span>
-              </div>
-              <div className="mt-2 text-[22px] font-black leading-none" style={{ color: k.color }}>{fINR(k.value)}</div>
-              <div className="mt-1.5 text-[11px] text-slate-500">{k.sub}</div>
+            <div key={k.n} className="rounded-2xl px-3.5 py-2.5 shadow-sm transition-shadow hover:shadow-md" style={{ background: `linear-gradient(135deg, ${k.color}1F 0%, #ffffff 72%)`, border: `1px solid ${k.color}33` }}>
+              <span className="text-[10.5px] font-bold uppercase tracking-wide text-slate-500">In {k.n} years</span>
+              <div className="mt-0.5 text-[19px] font-black leading-tight tracking-tight" style={{ color: k.color }}>{fINR(k.value)}</div>
+              <div className="text-[10.5px] text-slate-500">{k.sub}</div>
             </div>
           ))}
         </div>
