@@ -4,6 +4,10 @@ import Button from "../../components/ui/Button.jsx";
 import Icon from "../../lib/icons.jsx";
 import { SectionCard, KPI, StatusPill, DataTable, Field, Textarea, Select, SuccessNote, HistoryTrail, Breadcrumb } from "../../components/ui/kit.jsx";
 import { GO_QUEUE, ACTION_CODES } from "../../data/grievance.js";
+import AiContentInsight from "../../components/ui/AiContentInsight.jsx";
+import { AiSummaryButton } from "../../components/ui/AiCaseSummary.jsx";
+import { buildGrievanceSummary } from "../../lib/aiSummary.js";
+import { getAiDefaultOpen } from "../../lib/prefs.js";
 
 export default function GrievanceQueue({ onBack }) {
   const [rows, setRows] = useState(GO_QUEUE.map((r) => ({ ...r })));
@@ -12,6 +16,7 @@ export default function GrievanceQueue({ onBack }) {
   const [text, setText] = useState("");
   const [office, setOffice] = useState("");
   const [flash, setFlash] = useState("");
+  const [aiOpen, setAiOpen] = useState(getAiDefaultOpen());
   const sel = rows.find((r) => r.id === openId);
 
   const act = () => {
@@ -27,7 +32,11 @@ export default function GrievanceQueue({ onBack }) {
   if (sel) {
     return (
       <ModuleShell icon="messageCircle" title={sel.subject} desc={`${sel.regNo} · ${sel.category}`} onBack={() => setOpenId(null)}>
-        <Breadcrumb items={[{ label: "Redressal queue", onClick: () => setOpenId(null) }, { label: sel.regNo }]} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Breadcrumb items={[{ label: "Redressal queue", onClick: () => setOpenId(null) }, { label: sel.regNo }]} />
+          <AiSummaryButton open={aiOpen} onToggle={() => setAiOpen((o) => !o)} />
+        </div>
+        {aiOpen && <AiContentInsight summary={buildGrievanceSummary(sel)} />}
         <div className="grid gap-4 sm:grid-cols-3">
           <KPI label="From" value={sel.from} icon="userCheck" tone="primary" />
           <KPI label="SLA" value={sel.sla} icon="activity" tone={sel.sla.includes("Overdue") ? "saffron" : "primary"} />

@@ -4,6 +4,7 @@ import Button from "../../components/ui/Button.jsx";
 import Icon from "../../lib/icons.jsx";
 import { SectionCard, InfoRow, Field, Input, SuccessNote } from "../../components/ui/kit.jsx";
 import { PENSIONER } from "../../data/pensioner.js";
+import AiPreferenceCard from "../../components/ui/AiPreferenceCard.jsx";
 
 export default function Profile({ onBack }) {
   const [edit, setEdit] = useState(false);
@@ -60,6 +61,8 @@ export default function Profile({ onBack }) {
           </div>
         )}
       </SectionCard>
+
+      <AiPreferenceCard />
 
       <SectionCard title="Bank account" desc="Change this from Transfer Pension Account." icon="repeat">
         <InfoRow label="Bank" value={PENSIONER.bank.name} />

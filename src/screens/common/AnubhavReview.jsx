@@ -4,6 +4,10 @@ import Button from "../../components/ui/Button.jsx";
 import Icon from "../../lib/icons.jsx";
 import { SectionCard, KPI, StatusPill, SuccessNote, Field, Textarea, Breadcrumb } from "../../components/ui/kit.jsx";
 import AnubhavDetail from "./AnubhavDetail.jsx";
+import AiContentInsight from "../../components/ui/AiContentInsight.jsx";
+import { AiSummaryButton } from "../../components/ui/AiCaseSummary.jsx";
+import { buildAnubhavSummary } from "../../lib/aiSummary.js";
+import { getAiDefaultOpen } from "../../lib/prefs.js";
 import { ANUBHAV_SUBMISSIONS } from "../../data/anubhav.js";
 
 const STAGE = {
@@ -20,6 +24,7 @@ export default function AnubhavReview({ stage, onBack }) {
   const [showReturn, setShowReturn] = useState(false);
   const [reason, setReason] = useState("");
   const [flash, setFlash] = useState("");
+  const [aiOpen, setAiOpen] = useState(getAiDefaultOpen());
   const sel = rows.find((r) => r.id === openId);
 
   const decide = (status, msg) => {
@@ -31,7 +36,11 @@ export default function AnubhavReview({ stage, onBack }) {
     const canAct = sel.status === cfg.actionable;
     return (
       <ModuleShell icon="bookOpen" title={sel.title} desc={`${sel.author} · ${sel.designation}`} onBack={() => { setOpenId(null); setShowReturn(false); }}>
-        <Breadcrumb items={[{ label: "Anubhav write-ups", onClick: () => setOpenId(null) }, { label: sel.author }]} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Breadcrumb items={[{ label: "Anubhav write-ups", onClick: () => setOpenId(null) }, { label: sel.author }]} />
+          <AiSummaryButton open={aiOpen} onToggle={() => setAiOpen((o) => !o)} />
+        </div>
+        {aiOpen && <AiContentInsight summary={buildAnubhavSummary(sel)} />}
         <AnubhavDetail sub={sel} />
         {canAct ? (
           <SectionCard title="Your decision" desc={stage === "HOO" ? "Recommend this experience to the HOD, or return it to the author for revision." : "Publish this experience to the Anubhav portal, or return it for revision."} icon="scale">

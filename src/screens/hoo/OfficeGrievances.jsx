@@ -5,12 +5,17 @@ import Button from "../../components/ui/Button.jsx";
 import Icon from "../../lib/icons.jsx";
 import { SectionCard, StatusPill, Field, Textarea, SuccessNote, Breadcrumb } from "../../components/ui/kit.jsx";
 import { HOO_GRIEVANCES } from "../../data/hoo.js";
+import AiContentInsight from "../../components/ui/AiContentInsight.jsx";
+import { AiSummaryButton } from "../../components/ui/AiCaseSummary.jsx";
+import { buildGrievanceSummary } from "../../lib/aiSummary.js";
+import { getAiDefaultOpen } from "../../lib/prefs.js";
 
 export default function OfficeGrievances({ onBack }) {
   const [list, setList] = useState(HOO_GRIEVANCES.map((g) => ({ ...g })));
   const [openId, setOpenId] = useState(null);
   const [atr, setAtr] = useState("");
   const [flash, setFlash] = useState("");
+  const [aiOpen, setAiOpen] = useState(getAiDefaultOpen());
   const sel = list.find((g) => g.id === openId);
   const open = list.filter((g) => g.status === "Open");
 
@@ -25,7 +30,11 @@ export default function OfficeGrievances({ onBack }) {
   if (sel) {
     return (
       <ModuleShell icon="messageCircle" title={sel.subject} desc={`${sel.regNo} · from ${sel.from}`} onBack={() => setOpenId(null)}>
-        <Breadcrumb items={[{ label: "Office Grievances", onClick: () => setOpenId(null) }, { label: sel.regNo }]} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Breadcrumb items={[{ label: "Office Grievances", onClick: () => setOpenId(null) }, { label: sel.regNo }]} />
+          <AiSummaryButton open={aiOpen} onToggle={() => setAiOpen((o) => !o)} />
+        </div>
+        {aiOpen && <AiContentInsight summary={buildGrievanceSummary({ ...sel, category: sel.category || "Pension processing" })} />}
         <SectionCard title="History" icon="activity" action={<StatusPill>{sel.status}</StatusPill>}>
           <ol className="relative ml-3 border-l-2 border-border">
             {sel.history.map((h, i) => (
