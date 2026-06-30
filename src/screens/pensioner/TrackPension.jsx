@@ -179,16 +179,21 @@ function PensionForecast() {
   const curMonthly = PAYMENTS[0].gross;            // current monthly gross (basic + DR)
   const g = 1.04;                                   // indicative ~4%/yr via DR revisions
   const monthlyAt = (y) => Math.round(curMonthly * Math.pow(g, y - NOW));
+  const cumAt = (y) => { let s = 0; for (let k = START; k <= y; k++) s += monthlyAt(k) * 12; return s; };
+  const [mode, setMode] = useState("cum");          // "cum" = total received · "month" = per month
   const [hi, setHi] = useState(null);               // hovered year index
-  const data = [];
-  for (let y = START; y <= END; y++) data.push({ y, m: monthlyAt(y), received: y <= NOW });
+  const isCum = mode === "cum";
+  const valAt = (y) => isCum ? cumAt(y) : monthlyAt(y);
 
-  const W = 720, H = 244, pad = { t: 18, r: 18, b: 30, l: 58 };
+  const data = [];
+  for (let y = START; y <= END; y++) data.push({ y, v: valAt(y), received: y <= NOW });
+
+  const W = 720, H = 244, pad = { t: 18, r: 18, b: 30, l: 62 };
   const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
-  const maxA = Math.max(...data.map((d) => d.m)) * 1.08;
+  const maxA = Math.max(...data.map((d) => d.v)) * 1.08;
   const X = (y) => pad.l + ((y - START) / (END - START)) * iw;
   const Y = (a) => pad.t + ih - (a / maxA) * ih;
-  const line = (pts) => pts.map((d, i) => (i ? "L" : "M") + X(d.y).toFixed(1) + " " + Y(d.m).toFixed(1)).join(" ");
+  const line = (pts) => pts.map((d, i) => (i ? "L" : "M") + X(d.y).toFixed(1) + " " + Y(d.v).toFixed(1)).join(" ");
   const past = data.filter((d) => d.y <= NOW);
   const future = data.filter((d) => d.y >= NOW);
   const areaAll = line(data) + ` L ${X(END).toFixed(1)} ${(pad.t + ih)} L ${X(START).toFixed(1)} ${(pad.t + ih)} Z`;
@@ -197,74 +202,100 @@ function PensionForecast() {
   const band = iw / (data.length - 1);
   const hd = hi != null ? data[hi] : null;
   const fINR = (n) => formatINR(n);
-  const kfmt = (n) => n >= 100000 ? "\u20B9" + (n / 100000).toFixed(n >= 1000000 ? 0 : 1) + "L" : "\u20B9" + Math.round(n / 1000) + "k";
-  const lifetime = future.reduce((s, d) => s + d.m * 12, 0);
+  const kfmt = (n) => n >= 1e7 ? "\u20B9" + (n / 1e7).toFixed(1) + "Cr" : n >= 1e5 ? "\u20B9" + (n / 1e5).toFixed(1) + "L" : n >= 1e3 ? "\u20B9" + Math.round(n / 1e3) + "k" : "\u20B9" + Math.round(n);
+  const lifetime = cumAt(END);
+
+  // KPI cards (above graph) — horizons 5/10/20/30 yrs, vibrant colours, driven by the toggle.
+  const VIBRANT = ["#00C896", "#06B6D4", "#F97316", "#7A5AF8"];
+  const KP = [5, 10, 20, 30].map((n, i) => ({
+    n, year: NOW + n, color: VIBRANT[i],
+    value: isCum ? cumAt(NOW + n) : monthlyAt(NOW + n),
+    sub: isCum ? `total by ${NOW + n}` : "per month",
+  }));
 
   return (
-    <div>
-      <div className="relative w-full overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-3">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: "auto" }} role="img" aria-label="30-year pension forecast" onMouseLeave={() => setHi(null)}>
-          <defs>
-            <linearGradient id="fcA" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#00C896" stopOpacity="0.28" /><stop offset="100%" stopColor="#00C896" stopOpacity="0.02" /></linearGradient>
-          </defs>
-          {/* y-axis gridlines + value labels */}
-          {gridF.map((fr, i) => { const gy = pad.t + ih - fr * ih; return (
-            <g key={i}>
-              <line x1={pad.l} y1={gy} x2={W - pad.r} y2={gy} stroke="#E2E8F0" strokeWidth="1" />
-              <text x={pad.l - 8} y={gy + 3} fontSize="10" fill="#94A3B8" textAnchor="end">{kfmt(fr * maxA)}</text>
-            </g>
-          ); })}
-          <text x={14} y={pad.t + ih / 2} fontSize="10" fill="#94A3B8" textAnchor="middle" transform={`rotate(-90 14 ${pad.t + ih / 2})`}>{"\u20B9 / month"}</text>
-          <path d={areaAll} fill="url(#fcA)" />
-          <path d={line(past)} fill="none" stroke="#00C896" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-          <path d={line(future)} fill="none" stroke="#7A5AF8" strokeWidth="3" strokeDasharray="2 7" strokeLinecap="round" strokeLinejoin="round" />
-          {/* data points (small) */}
-          {data.filter((d) => d.y % 2 === 0).map((d) => <circle key={d.y} cx={X(d.y)} cy={Y(d.m)} r="2.4" fill={d.received ? "#00C896" : "#7A5AF8"} opacity="0.55" />)}
-          {/* Now marker */}
-          <line x1={X(NOW)} y1={pad.t} x2={X(NOW)} y2={pad.t + ih} stroke="#94A3B8" strokeWidth="1" strokeDasharray="3 3" />
-          <circle cx={X(NOW)} cy={Y(monthlyAt(NOW))} r="4.5" fill="#fff" stroke="#00C896" strokeWidth="2" />
-          <text x={X(NOW) + 4} y={pad.t + 8} fontSize="10" fill="#64748B" fontWeight="700">Now</text>
-          {/* x ticks */}
-          {ticks.map((t) => <text key={t} x={X(t)} y={H - 8} fontSize="10" fill="#94A3B8" textAnchor={t === 2024 ? "start" : t === 2056 ? "end" : "middle"}>{t}</text>)}
-          {/* hover guide + dot + tooltip */}
-          {hd && (() => {
-            const hx = X(hd.y), hy = Y(hd.m), col = hd.received ? "#00C896" : "#7A5AF8";
-            const bw = 116, bh = 38; let bx = hx - bw / 2; bx = Math.max(pad.l, Math.min(bx, W - pad.r - bw)); let by = hy - bh - 10; if (by < pad.t) by = hy + 12;
-            return (
-              <g>
-                <line x1={hx} y1={pad.t} x2={hx} y2={pad.t + ih} stroke={col} strokeWidth="1" strokeDasharray="2 3" opacity="0.7" />
-                <circle cx={hx} cy={hy} r="5.5" fill="#fff" stroke={col} strokeWidth="2.5" />
-                <rect x={bx} y={by} width={bw} height={bh} rx="8" fill="#061B3D" />
-                <text x={bx + bw / 2} y={by + 15} fontSize="10.5" fill="#9DCBFF" textAnchor="middle" fontWeight="700">{hd.y}{hd.received ? " \u00B7 received" : " \u00B7 projected"}</text>
-                <text x={bx + bw / 2} y={by + 30} fontSize="13" fill="#fff" textAnchor="middle" fontWeight="800">{fINR(hd.m)}/mo</text>
-              </g>
-            );
-          })()}
-          {/* invisible hover bands (on top) */}
-          {data.map((d, i) => <rect key={"b" + i} x={X(d.y) - band / 2} y={pad.t} width={band} height={ih} fill="transparent" onMouseEnter={() => setHi(i)} style={{ cursor: "crosshair" }} />)}
-        </svg>
-        <div className="mt-1 flex flex-wrap items-center gap-4 px-1 text-[12px] text-muted-foreground">
-          <span className="flex items-center gap-1.5"><span className="inline-block h-1 w-5 rounded bg-[#00C896]" /> Received (to date)</span>
-          <span className="flex items-center gap-1.5"><span className="inline-block h-1 w-5 rounded" style={{ background: "repeating-linear-gradient(90deg,#7A5AF8 0 3px,transparent 3px 7px)" }} /> AI projection (dashed)</span>
-          <span className="ml-auto hidden text-[11px] text-slate-400 sm:block">Hover the chart to read any year</span>
+    <div className="overflow-hidden rounded-xl2 border border-slate-200 bg-white shadow-card">
+      {/* SHIMMER NAVY HEADER */}
+      <div className="ai-sheen flex items-center gap-3 bg-gradient-to-r from-[#061B3D] to-[#0B2A55] px-5 py-3.5 text-white">
+        <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 shadow"><Icon name="sparkles" size={18} /></span>
+        <div className="min-w-0">
+          <div className="text-[15px] font-extrabold leading-tight">AI Pension Forecast</div>
+          <div className="truncate text-[11.5px] text-cyan-100/70">Projected to 2056 — received so far (solid), AI projection (dashed)</div>
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-4">
-        {[["This year", monthlyAt(NOW), "#00C896"], ["In 1 year", monthlyAt(NOW + 1), "#06B6D4"], ["In 5 years", monthlyAt(NOW + 5), "#7A5AF8"], ["In 30 years", monthlyAt(NOW + 30), "#1B63E8"]].map(([l, v, c]) => (
-          <div key={l} className="rounded-xl border border-slate-200 bg-white p-3.5">
-            <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">{l}</div>
-            <div className="mt-1 text-lg font-black" style={{ color: c }}>{fINR(v)}</div>
-            <div className="text-[11px] text-muted-foreground">per month</div>
+      <div className="p-4">
+        {/* TOGGLE */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
+            {[["cum", "Total received"], ["month", "Per month"]].map(([k, l]) => (
+              <button key={k} onClick={() => setMode(k)} className={cn("rounded-lg px-3.5 py-1.5 text-[13px] font-bold transition-all", mode === k ? "bg-gradient-to-br from-[#0B2A55] to-[#1B63E8] text-white shadow-soft" : "text-slate-500 hover:text-slate-700")}>{l}</button>
+            ))}
           </div>
-        ))}
-      </div>
+          <span className="text-[11px] text-slate-400">{isCum ? "Cumulative pension received up to each year" : "Monthly pension in each year"}</span>
+        </div>
 
-      <div className="ai-sheen mt-4 overflow-hidden rounded-xl bg-gradient-to-r from-[#061B3D] to-[#0B2A55] p-4 text-white">
-        <div className="flex items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600"><Icon name="sparkles" size={14} /></span><span className="text-[13px] font-extrabold">AI forecast insight</span></div>
-        <p className="mt-2 text-[13px] leading-relaxed text-cyan-50/90">
-          At the historical Dearness-Relief trajectory (~4%/yr), your monthly pension is projected to rise from <b className="text-white">{fINR(monthlyAt(NOW))}</b> today to <b className="text-white">{fINR(monthlyAt(NOW + 5))}</b> in five years and <b className="text-white">{fINR(monthlyAt(NOW + 30))}</b> over thirty years. Pension is payable for life; projected receipts from now to {END} total approximately <b className="text-white">{fINR(lifetime)}</b>. Figures are indicative and exclude future pay-commission revisions.
-        </p>
+        {/* KPI STATS — ABOVE GRAPH, vibrant */}
+        <div className="mt-4 grid gap-3 sm:grid-cols-4">
+          {KP.map((k) => (
+            <div key={k.n} className="rounded-xl border border-slate-200 border-t-4 bg-white p-3.5" style={{ borderTopColor: k.color }}>
+              <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">In {k.n} years</div>
+              <div className="mt-1 text-lg font-black" style={{ color: k.color }}>{fINR(k.value)}</div>
+              <div className="text-[11px] text-muted-foreground">{k.sub}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* GRAPH */}
+        <div className="relative mt-4 w-full overflow-hidden rounded-xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-3">
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: "auto" }} role="img" aria-label="30-year pension forecast" onMouseLeave={() => setHi(null)}>
+            <defs>
+              <linearGradient id="fcA" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#00C896" stopOpacity="0.28" /><stop offset="100%" stopColor="#00C896" stopOpacity="0.02" /></linearGradient>
+            </defs>
+            {gridF.map((fr, i) => { const gy = pad.t + ih - fr * ih; return (
+              <g key={i}>
+                <line x1={pad.l} y1={gy} x2={W - pad.r} y2={gy} stroke="#E2E8F0" strokeWidth="1" />
+                <text x={pad.l - 8} y={gy + 3} fontSize="10" fill="#94A3B8" textAnchor="end">{kfmt(fr * maxA)}</text>
+              </g>
+            ); })}
+            <text x={14} y={pad.t + ih / 2} fontSize="10" fill="#94A3B8" textAnchor="middle" transform={`rotate(-90 14 ${pad.t + ih / 2})`}>{isCum ? "\u20B9 received" : "\u20B9 / month"}</text>
+            <path d={areaAll} fill="url(#fcA)" />
+            <path d={line(past)} fill="none" stroke="#00C896" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={line(future)} fill="none" stroke="#7A5AF8" strokeWidth="3" strokeDasharray="2 7" strokeLinecap="round" strokeLinejoin="round" />
+            {data.filter((d) => d.y % 2 === 0).map((d) => <circle key={d.y} cx={X(d.y)} cy={Y(d.v)} r="2.4" fill={d.received ? "#00C896" : "#7A5AF8"} opacity="0.55" />)}
+            <line x1={X(NOW)} y1={pad.t} x2={X(NOW)} y2={pad.t + ih} stroke="#94A3B8" strokeWidth="1" strokeDasharray="3 3" />
+            <circle cx={X(NOW)} cy={Y(valAt(NOW))} r="4.5" fill="#fff" stroke="#00C896" strokeWidth="2" />
+            <text x={X(NOW) + 4} y={pad.t + 8} fontSize="10" fill="#64748B" fontWeight="700">Now</text>
+            {ticks.map((t) => <text key={t} x={X(t)} y={H - 8} fontSize="10" fill="#94A3B8" textAnchor={t === 2024 ? "start" : t === 2056 ? "end" : "middle"}>{t}</text>)}
+            {hd && (() => {
+              const hx = X(hd.y), hy = Y(hd.v), col = hd.received ? "#00C896" : "#7A5AF8";
+              const bw = isCum ? 168 : 120, bh = 38; let bx = hx - bw / 2; bx = Math.max(pad.l, Math.min(bx, W - pad.r - bw)); let by = hy - bh - 10; if (by < pad.t) by = hy + 12;
+              return (
+                <g>
+                  <line x1={hx} y1={pad.t} x2={hx} y2={pad.t + ih} stroke={col} strokeWidth="1" strokeDasharray="2 3" opacity="0.7" />
+                  <circle cx={hx} cy={hy} r="5.5" fill="#fff" stroke={col} strokeWidth="2.5" />
+                  <rect x={bx} y={by} width={bw} height={bh} rx="8" fill="#061B3D" />
+                  <text x={bx + bw / 2} y={by + 15} fontSize="10.5" fill="#9DCBFF" textAnchor="middle" fontWeight="700">{hd.y}{hd.received ? " \u00B7 received" : " \u00B7 projected"}</text>
+                  <text x={bx + bw / 2} y={by + 30} fontSize="13" fill="#fff" textAnchor="middle" fontWeight="800">{isCum ? fINR(hd.v) + " total" : fINR(hd.v) + "/mo"}</text>
+                </g>
+              );
+            })()}
+            {data.map((d, i) => <rect key={"b" + i} x={X(d.y) - band / 2} y={pad.t} width={band} height={ih} fill="transparent" onMouseEnter={() => setHi(i)} style={{ cursor: "crosshair" }} />)}
+          </svg>
+          <div className="mt-1 flex flex-wrap items-center gap-4 px-1 text-[12px] text-muted-foreground">
+            <span className="flex items-center gap-1.5"><span className="inline-block h-1 w-5 rounded bg-[#00C896]" /> Received (to date)</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block h-1 w-5 rounded" style={{ background: "repeating-linear-gradient(90deg,#7A5AF8 0 3px,transparent 3px 7px)" }} /> AI projection (dashed)</span>
+            <span className="ml-auto hidden text-[11px] text-slate-400 sm:block">Hover the chart to read any year</span>
+          </div>
+        </div>
+
+        {/* AI INSIGHT STRIP */}
+        <div className="ai-sheen mt-4 overflow-hidden rounded-xl bg-gradient-to-r from-[#061B3D] to-[#0B2A55] p-4 text-white">
+          <div className="flex items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600"><Icon name="sparkles" size={14} /></span><span className="text-[13px] font-extrabold">AI forecast insight</span></div>
+          <p className="mt-2 text-[13px] leading-relaxed text-cyan-50/90">
+            At the historical Dearness-Relief trajectory (~4%/yr), your monthly pension is projected to rise from <b className="text-white">{fINR(monthlyAt(NOW))}</b> today to <b className="text-white">{fINR(monthlyAt(NOW + 5))}</b> in five years and <b className="text-white">{fINR(monthlyAt(NOW + 30))}</b> over thirty years. Pension is payable for life; projected receipts from now to {END} total approximately <b className="text-white">{fINR(lifetime)}</b>. Figures are indicative and exclude future pay-commission revisions.
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -283,9 +314,7 @@ export default function TrackPension({ onBack }) {
         <KPI label="Disbursing bank" value={PENSIONER.bank.name.split(" ")[0]} sub={PENSIONER.bank.accountMasked} icon="badgeCheck" tone="saffron" />
       </div>
 
-      <SectionCard title="AI pension forecast" desc="Projected monthly pension to 2056 — received so far (solid) and AI projection (dashed)." icon="activity">
-        <PensionForecast />
-      </SectionCard>
+      <PensionForecast />
 
       <SectionCard title="Your pension lifecycle" desc="Tap any stage to see what happened." icon="listChecks">
         <div className="overflow-x-auto pb-2">
