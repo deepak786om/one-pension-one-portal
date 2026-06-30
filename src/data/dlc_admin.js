@@ -11,9 +11,9 @@ export const DLC_REGIONS = [
 ];
 
 export const CAMPS_LOGGED = [
-  { id: "C1", date: "24 Jun 2026", location: "Connaught Place, New Delhi", bank: "SBI", count: 142, operator: "R. Sharma" },
-  { id: "C2", date: "23 Jun 2026", location: "T. Nagar, Chennai", bank: "Indian Bank", count: 208, operator: "K. Murthy" },
-  { id: "C3", date: "23 Jun 2026", location: "Salt Lake, Kolkata", bank: "PNB", count: 96, operator: "S. Das" },
+  { id: "C1", from: "24 Jun 2026", to: "26 Jun 2026", location: "Connaught Place, New Delhi", lat: 28.6315, lng: 77.2167, bank: "SBI", count: 142, operator: "R. Sharma" },
+  { id: "C2", from: "23 Jun 2026", to: "25 Jun 2026", location: "T. Nagar, Chennai", lat: 13.0418, lng: 80.2341, bank: "Indian Bank", count: 208, operator: "K. Murthy" },
+  { id: "C3", from: "23 Jun 2026", to: "24 Jun 2026", location: "Salt Lake, Kolkata", lat: 22.5790, lng: 88.4146, bank: "PNB", count: 96, operator: "S. Das" },
 ];
 
 export const JP_IMPORTS = [

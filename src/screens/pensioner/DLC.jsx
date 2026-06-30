@@ -90,9 +90,13 @@ export default function DLC({ onBack }) {
                     <div className="text-sm font-bold text-foreground">{c.name}</div>
                     <div className="text-xs text-muted-foreground">{c.address}</div>
                     <div className="mt-0.5 text-xs font-medium text-primary"><Icon name="phone" size={11} className="mr-1 inline" />{c.contact}</div>
+                    <div className="mt-0.5 text-xs text-muted-foreground"><Icon name="clock" size={11} className="mr-1 inline text-saffron" />Open: <b className="text-foreground">{c.from} – {c.to}</b></div>
                   </div>
                 </div>
-                <span className="rounded-full bg-saffron/15 px-2.5 py-1 text-xs font-bold text-saffron">{c.distanceKm} km</span>
+                <div className="flex flex-col items-end gap-1.5">
+                  <span className="rounded-full bg-saffron/15 px-2.5 py-1 text-xs font-bold text-saffron">{c.distanceKm} km</span>
+                  <a href={`https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"><Icon name="mapPin" size={11} /> Directions</a>
+                </div>
               </div>
             ))}
           </motion.div>

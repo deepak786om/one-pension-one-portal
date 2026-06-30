@@ -16,6 +16,39 @@ function IdentityBanner() {
   );
 }
 
+const DEPT_STATS = { submitted: 50, nominated: 1 };
+
+const BHASHINI_LANGS = ["English", "हिन्दी (Hindi)", "தமிழ் (Tamil)", "বাংলা (Bengali)", "मराठी (Marathi)", "తెలుగు (Telugu)"];
+const DEMO_DICTATION = {
+  "English": "In my final posting I streamlined a long-pending process and trained my team to sustain the change after I left.",
+  "हिन्दी (Hindi)": "अपनी अंतिम तैनाती में मैंने एक लंबे समय से लंबित प्रक्रिया को सरल बनाया और अपनी टीम को इस बदलाव को बनाए रखने के लिए प्रशिक्षित किया।",
+  "தமிழ் (Tamil)": "எனது கடைசிப் பணியில் நீண்ட காலமாக நிலுவையில் இருந்த ஒரு செயல்முறையை எளிமைப்படுத்தி, அதைத் தொடர என் குழுவைப் பயிற்றுவித்தேன்.",
+  "বাংলা (Bengali)": "আমার শেষ পদায়নে আমি একটি দীর্ঘ-বিলম্বিত প্রক্রিয়া সহজ করেছি এবং পরিবর্তনটি টিকিয়ে রাখতে আমার দলকে প্রশিক্ষণ দিয়েছি।",
+  "मराठी (Marathi)": "माझ्या शेवटच्या नियुक्तीत मी एक प्रलंबित प्रक्रिया सोपी केली आणि हा बदल टिकवण्यासाठी माझ्या संघाला प्रशिक्षित केले.",
+  "తెలుగు (Telugu)": "నా చివరి నియామకంలో నేను చాలాకాలంగా పెండింగ్‌లో ఉన్న ప్రక్రియను సరళతరం చేసి, మార్పును కొనసాగించడానికి నా బృందానికి శిక్షణ ఇచ్చాను.",
+};
+
+function BhashiniMic({ onInsert }) {
+  const [lang, setLang] = useState("English");
+  const [listening, setListening] = useState(false);
+  const start = () => {
+    if (listening) return;
+    setListening(true);
+    setTimeout(() => { setListening(false); onInsert((DEMO_DICTATION[lang] || DEMO_DICTATION["English"]) + " "); }, 1500);
+  };
+  return (
+    <div className="mb-1.5 flex flex-wrap items-center gap-2">
+      <select value={lang} onChange={(e) => setLang(e.target.value)} className="rounded-lg border border-border bg-white px-2 py-1 text-xs font-medium text-foreground">
+        {BHASHINI_LANGS.map((l) => <option key={l}>{l}</option>)}
+      </select>
+      <button type="button" onClick={start} className={cn("inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold transition-colors", listening ? "border-red-300 bg-red-50 text-red-600" : "border-primary/30 bg-primary/5 text-primary hover:bg-primary/10")}>
+        <Icon name="mic" size={13} className={listening ? "animate-pulse" : ""} /> {listening ? "Listening…" : "Speak"}
+      </button>
+      <span className="text-[10px] text-muted-foreground">Speak in your language — powered by <b className="text-primary">Bhashini</b></span>
+    </div>
+  );
+}
+
 
 function anubhavWindow() {
   const NOW = new Date("2026-06-30");
@@ -105,6 +138,21 @@ export default function Anubhav({ onBack }) {
   // declaration-gated: needs a category, some content, and the declaration accepted
   const valid = !!form.category && form.content.trim().length > 0 && accept;
 
+  const insertInto = (k) => (t) => setForm((f) => ({ ...f, [k]: (f[k] ? f[k] + "\n" : "") + t }));
+  const steps = [
+    { done: !!form.category, label: "Category chosen" },
+    { done: form.content.trim().length >= 50, label: "Experience described" },
+    { done: form.content.trim().length >= 400, label: "Rich detail added" },
+    { done: skills.length > 0, label: "Skills tagged" },
+    { done: !!(form.innovation || form.award || form.leadership), label: "Highlights added" },
+    { done: accept, label: "Declaration accepted" },
+  ];
+  const donePct = Math.round((steps.filter((x) => x.done).length / steps.length) * 100);
+  const encourage = donePct === 0 ? "Start with the category — it takes two minutes."
+    : donePct < 50 ? "Great start — a few details make your story shine."
+    : donePct < 100 ? "Almost there — add the finishing touches."
+    : "All set — you're ready to submit!";
+
   const submit = () => {
     setData({
       ...form,
@@ -180,12 +228,29 @@ export default function Anubhav({ onBack }) {
       <AnubhavStatusCard submitted={false} onSimulate={simulateSubmit} />
       <SectionCard title="Anubhav write-up" desc="One write-up per retirement. Fields marked * are required." icon="bookOpen">
         <div className="grid gap-4">
+          <div className="flex items-start gap-3 rounded-xl border border-saffron/25 bg-saffron/[0.06] p-3.5">
+            <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-saffron/15 text-saffron"><Icon name="sparkles" size={17} /></span>
+            <p className="text-xs leading-relaxed text-foreground"><b>{DEPT_STATS.submitted} colleagues</b> from {PENSIONER.ministry} shared their Anubhav in the last year{DEPT_STATS.nominated ? <>, and <b>{DEPT_STATS.nominated}</b> was nominated for a National Anubhav Award</> : null}. Your story could be next — it takes about ten minutes.</p>
+          </div>
+
+          <div className="rounded-xl border border-primary/15 bg-gradient-to-br from-primary/[0.04] to-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-sm font-bold text-foreground">Your write-up is {donePct}% ready</span>
+              <span className="text-xs font-semibold text-primary">{encourage}</span>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-gradient-to-r from-primary to-saffron transition-all duration-500" style={{ width: donePct + "%" }} /></div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {steps.map((x) => <span key={x.label} className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold", x.done ? "bg-success/12 text-success" : "bg-muted/60 text-muted-foreground")}>{x.done && <Icon name="check" size={11} />}{x.label}</span>)}
+            </div>
+          </div>
+
           <IdentityBanner />
           <Field label="Category of work" required>
             <Select options={ANUBHAV_CATEGORIES} value={form.category} onChange={(e) => set("category", e.target.value)} />
           </Field>
           <Field label="Your Anubhav (the experience to be highlighted)" required hint="Up to ~5000 words. Do not mention your name, designation or contact details.">
-            <Textarea value={form.content} onChange={(e) => set("content", e.target.value)} maxLength={5000} placeholder="Describe your commendable work / contribution…" className="min-h-[150px]" />
+            <BhashiniMic onInsert={insertInto("content")} />
+            <Textarea value={form.content} onChange={(e) => set("content", e.target.value)} maxLength={5000} placeholder="Describe your commendable work / contribution… or tap Speak to dictate." className="min-h-[150px]" />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Innovation / exceptional work (optional)"><Textarea value={form.innovation} onChange={(e) => set("innovation", e.target.value)} /></Field>
@@ -208,6 +273,7 @@ export default function Anubhav({ onBack }) {
           </Field>
 
           <Field label="Suggestions to improve your line of work (optional)" hint="Up to ~2000 words.">
+            <BhashiniMic onInsert={insertInto("suggestions")} />
             <Textarea value={form.suggestions} onChange={(e) => set("suggestions", e.target.value)} maxLength={2000} />
           </Field>
 

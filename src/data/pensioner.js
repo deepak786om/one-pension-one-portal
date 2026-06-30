@@ -82,13 +82,13 @@ export const DLC_STATUS = { current: "Submitted", validTill: "30 Nov 2026", next
 
 // nearest DLC camps (sorted by distance at runtime)
 export const DLC_CAMPS = [
-  { name: "SBI Pension Seva — Connaught Place", address: "PC-7, Connaught Place, New Delhi 110001", contact: "011-2345 6701", city: "New Delhi", pincode: "110001", distanceKm: 1.2 },
-  { name: "CSC e-Governance — Dwarka Sector 12", address: "Plot 9, Sector 12, Dwarka, New Delhi 110078", contact: "011-2890 4412", city: "New Delhi", pincode: "110078", distanceKm: 2.4 },
-  { name: "India Post — Janakpuri Head Office", address: "C-4 Block, Janakpuri, New Delhi 110058", contact: "011-2555 1188", city: "New Delhi", pincode: "110058", distanceKm: 3.9 },
-  { name: "PNB Pension Cell — Rajouri Garden", address: "A-2, Rajouri Garden, New Delhi 110027", contact: "011-2510 7723", city: "New Delhi", pincode: "110027", distanceKm: 5.1 },
-  { name: "Bank of Baroda — Vikaspuri", address: "Main Market, Vikaspuri, New Delhi 110018", contact: "011-2856 9034", city: "New Delhi", pincode: "110018", distanceKm: 6.0 },
-  { name: "CSC — Uttam Nagar", address: "Metro Pillar 612, Uttam Nagar, New Delhi 110059", contact: "011-2536 8890", city: "New Delhi", pincode: "110059", distanceKm: 7.3 },
-  { name: "India Post — Gurugram Sector 14", address: "Old DC Road, Sector 14, Gurugram 122001", contact: "0124-230 1145", city: "Gurugram", pincode: "122001", distanceKm: 12.6 },
+  { name: "SBI Pension Seva — Connaught Place", address: "PC-7, Connaught Place, New Delhi 110001", contact: "011-2345 6701", city: "New Delhi", pincode: "110001", distanceKm: 1.2, from: "01 Jul 2026", to: "05 Jul 2026", lat: 28.6328, lng: 77.2197 },
+  { name: "CSC e-Governance — Dwarka Sector 12", address: "Plot 9, Sector 12, Dwarka, New Delhi 110078", contact: "011-2890 4412", city: "New Delhi", pincode: "110078", distanceKm: 2.4, from: "02 Jul 2026", to: "04 Jul 2026", lat: 28.5921, lng: 77.0460 },
+  { name: "India Post — Janakpuri Head Office", address: "C-4 Block, Janakpuri, New Delhi 110058", contact: "011-2555 1188", city: "New Delhi", pincode: "110058", distanceKm: 3.9, from: "03 Jul 2026", to: "06 Jul 2026", lat: 28.6219, lng: 77.0878 },
+  { name: "PNB Pension Cell — Rajouri Garden", address: "A-2, Rajouri Garden, New Delhi 110027", contact: "011-2510 7723", city: "New Delhi", pincode: "110027", distanceKm: 5.1, from: "04 Jul 2026", to: "05 Jul 2026", lat: 28.6469, lng: 77.1200 },
+  { name: "Bank of Baroda — Vikaspuri", address: "Main Market, Vikaspuri, New Delhi 110018", contact: "011-2856 9034", city: "New Delhi", pincode: "110018", distanceKm: 6.0, from: "06 Jul 2026", to: "08 Jul 2026", lat: 28.6380, lng: 77.0739 },
+  { name: "CSC — Uttam Nagar", address: "Metro Pillar 612, Uttam Nagar, New Delhi 110059", contact: "011-2536 8890", city: "New Delhi", pincode: "110059", distanceKm: 7.3, from: "07 Jul 2026", to: "09 Jul 2026", lat: 28.6225, lng: 77.0594 },
+  { name: "India Post — Gurugram Sector 14", address: "Old DC Road, Sector 14, Gurugram 122001", contact: "0124-230 1145", city: "Gurugram", pincode: "122001", distanceKm: 12.6, from: "08 Jul 2026", to: "10 Jul 2026", lat: 28.4595, lng: 77.0266 },
 ];
 
 // ---- grievances ----
