@@ -8,7 +8,7 @@ const SERVICES = [
   { icon: "fingerprint", label: "Digital Life Certificate", desc: "Submit Jeevan Pramaan in minutes." },
   { icon: "messageCircle", label: "Lodge a Grievance", desc: "Raise and follow up under a 30-day SLA." },
   { icon: "calculator", label: "Pension Calculators", desc: "Pension, gratuity, commutation & DR." },
-  { icon: "bookOpen", label: "Share via Anubhav", desc: "Publish your service experience." },
+  { icon: "bookOpen", label: "Share your Anubhav", desc: "Publish your service experience." },
   { icon: "heartHandshake", label: "Family & Nominee", desc: "Keep your particulars up to date." },
   { icon: "repeat", label: "Transfer Account", desc: "Move between disbursing agencies." },
 ];

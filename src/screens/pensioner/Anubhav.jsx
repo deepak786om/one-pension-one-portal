@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import ModuleShell from "./ModuleShell.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Icon from "../../lib/icons.jsx";
-import { SectionCard, Field, Select, Textarea, RadioPills, InfoRow, StatusPill } from "../../components/ui/kit.jsx";
+import { SectionCard, Field, Select, Textarea, RadioPills, InfoRow, StatusPill, Modal } from "../../components/ui/kit.jsx";
+import AnubhavDetail from "../common/AnubhavDetail.jsx";
 import { cn } from "../../lib/cn.js";
 import { ANUBHAV, ANUBHAV_CATEGORIES, ANUBHAV_SKILLS, PENSIONER } from "../../data/pensioner.js";
 
@@ -128,6 +129,7 @@ function AnubhavStatusCard({ submitted, data, onSimulate }) {
 
 export default function Anubhav({ onBack }) {
   const [submitted, setSubmitted] = useState(ANUBHAV.submitted);
+  const [preview, setPreview] = useState(false);
   const [data, setData] = useState(null); // snapshot shown after submit
   const [form, setForm] = useState({ category: "", content: "", innovation: "", award: "", leadership: "", suggestions: "", volunteer: "", feedbackEmail: "" });
   const [skills, setSkills] = useState([]);
@@ -172,6 +174,14 @@ export default function Anubhav({ onBack }) {
       date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
     });
     setSubmitted(true);
+  };
+
+  const previewSub = {
+    author: PENSIONER.name, designation: PENSIONER.designation, ministry: PENSIONER.ministry, office: PENSIONER.office, pan: PENSIONER.pan, ppo: PENSIONER.ppo, photo: false,
+    status: "Preview", date: "Not yet submitted", ref: "—",
+    title: form.category || "Your Anubhav write-up",
+    category: form.category || "—", content: form.content, innovation: form.innovation, award: form.award, leadership: form.leadership,
+    skills, suggestions: form.suggestions, volunteer: form.volunteer || "—", feedbackEmail: form.feedbackEmail || "—",
   };
 
   if (submitted) {
@@ -292,13 +302,30 @@ export default function Anubhav({ onBack }) {
           </label>
 
           <div className="flex gap-2">
-            <Button variant="saffron" disabled={!valid} onClick={submit}>
-              <Icon name="arrowRight" size={16} /> {accept ? "Submit write-up" : "Accept the declaration to submit"}
+            <Button variant="saffron" disabled={!valid} onClick={() => setPreview(true)}>
+              <Icon name="eye" size={16} /> {accept ? "Preview & submit" : "Accept the declaration to submit"}
             </Button>
             <Button variant="outline" onClick={onBack}>Cancel</Button>
           </div>
         </div>
       </SectionCard>
+
+      <Modal open={preview} onClose={() => setPreview(false)} maxW="max-w-3xl">
+        <div>
+          <div className="border-b border-border pb-3">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-saffron">Preview before submitting</div>
+            <h3 className="text-lg font-black text-foreground">Check your Anubhav</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">This is exactly how your HOO and HOD will see it. Nothing is submitted yet.</p>
+          </div>
+          <div className="mt-3 max-h-[62vh] space-y-6 overflow-y-auto pr-1">
+            <AnubhavDetail sub={previewSub} />
+          </div>
+          <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-border pt-3">
+            <Button variant="outline" onClick={() => setPreview(false)}><Icon name="chevronLeft" size={15} /> Edit</Button>
+            <Button variant="saffron" onClick={() => { setPreview(false); submit(); }}><Icon name="check" size={16} /> Confirm & submit</Button>
+          </div>
+        </div>
+      </Modal>
     </ModuleShell>
   );
 }

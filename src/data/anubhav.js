@@ -4,6 +4,7 @@
 export const ANUBHAV_SUBMISSIONS = [
   {
     id: "AN1", ref: "ANB-2026-4471", date: "18 Jun 2026", status: "Awaiting HOD approval",
+    hooRating: 5, hooRemarks: "Exceptional, well-evidenced reform that outlasted the author\u2019s tenure. Strongly recommended for publication.",
     author: "Anand Kumar Singh", designation: "Senior Section Engineer", ministry: "Ministry of Railways",
     pan: "ABCPS1234K", ppo: "PPO-2024-DEL-0098231", office: "NR — Personnel Branch", photo: true,
     category: "Government process re-engineering",
@@ -26,6 +27,7 @@ export const ANUBHAV_SUBMISSIONS = [
   },
   {
     id: "AN2", ref: "ANB-2026-4488", date: "20 Jun 2026", status: "Awaiting HOD approval",
+    hooRating: 4, hooRemarks: "A thoughtful, people-centred initiative. Recommended; consider featuring under regional-outreach best practices.",
     author: "Lakshmi Menon", designation: "Office Superintendent", ministry: "Ministry of Railways",
     pan: "LAKPM2211T", ppo: "PPO-2026-DEL-0101887", office: "NR — Personnel Branch", photo: false,
     category: "Development of personal traits while in service",

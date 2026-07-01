@@ -5,7 +5,7 @@ export const MODULES = {
   dlc_submit: { label: "Submit Digital Life Certificate", icon: "fingerprint", desc: "Annual Jeevan Pramaan via Aadhaar (Face/Finger/IRIS)." },
   grievance_lodge: { label: "Lodge & Track Grievance", icon: "messageCircle", desc: "Raise a pension grievance via CPENGRAMS." },
   calculators: { label: "Pension Calculators", icon: "calculator", desc: "Pension, gratuity, commutation and DR estimators." },
-  anubhav_share: { label: "Share via Anubhav", icon: "bookOpen", desc: "Publish your service experience for recognition." },
+  anubhav_share: { label: "Share your Anubhav", icon: "bookOpen", desc: "Publish your service experience for recognition." },
   family_update: { label: "Update Family / Nominee", icon: "heartHandshake", desc: "Maintain family and nominee particulars." },
   account_transfer: { label: "Transfer Pension Account", icon: "repeat", desc: "Move between disbursing agencies / banks." },
   service_verification: { label: "Service Verification", icon: "fileCheck", desc: "Verify Service Book and qualifying service." },
