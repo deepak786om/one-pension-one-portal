@@ -66,7 +66,7 @@ const parichay = [["Parichay ID", "text"], ["Password", "password"]];
 export const ROLES = [
   {
     id: "PENSIONER", label: "Pensioner / Family Pensioner", icon: "users", group: "Pensioners & Citizens",
-    authTitle: "PPO Number + Aadhaar OTP", authFields: [["PPO Number", "text"], ["Registered Mobile", "tel"]], otp: true,
+    authTitle: "PAN / PPO Number + Aadhaar OTP", authFields: [["PAN or PPO Number", "panppo", "e.g. ABCPS1234K or PPO-2024-DEL-0098231"], ["Registered Mobile", "tel"]], otp: true,
     modules: ["ppo_view", "track_pension", "dlc_submit", "grievance_lodge", "calculators", "anubhav_share", "family_update", "account_transfer"],
     reg: reg(
       [["Full Name", "text", true], ["PPO Number", "text", true], ["Aadhaar Number", "text", true], ["Date of Birth", "date", true], ["Bank Account (for DBT)", "text", true], ["Registered Mobile", "tel", true], ["Email", "email", false]],

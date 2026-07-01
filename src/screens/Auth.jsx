@@ -13,6 +13,7 @@ function validField(type, val) {
   if (type === "email") return emailRe.test(val);
   if (type === "password") return val.length >= 4;
   if (type === "tel") return val.replace(/\D/g, "").length >= 6;
+  if (type === "panppo") return /^[A-Za-z]{5}\d{4}[A-Za-z]$/.test(val.trim()) || /^[A-Za-z0-9/\-]{6,}$/.test(val.trim());
   return val.trim().length > 0;
 }
 
@@ -86,6 +87,7 @@ export default function Auth({ roleId, onBack, onSignIn, onRegister }) {
                 key={i}
                 label={f[0]}
                 type={f[1] === "password" ? "password" : "text"}
+                placeholder={f[2]}
                 value={values[i] || ""}
                 onChange={(v) => set(i, v)}
                 valid={validField(f[1], values[i] || "")}
@@ -130,7 +132,7 @@ export default function Auth({ roleId, onBack, onSignIn, onRegister }) {
   );
 }
 
-function Field({ label, type = "text", value, onChange, valid, hint, inputMode }) {
+function Field({ label, type = "text", value, onChange, valid, hint, inputMode, placeholder }) {
   const showTick = valid && value;
   return (
     <label className="block">
@@ -141,7 +143,7 @@ function Field({ label, type = "text", value, onChange, valid, hint, inputMode }
           inputMode={inputMode}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={`Enter ${label.toLowerCase()}`}
+          placeholder={placeholder || `Enter ${label.toLowerCase()}`}
           className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 pr-10 text-sm text-foreground outline-none transition-shadow placeholder:text-muted-foreground/70 focus:border-primary focus:ring-4 focus:ring-primary/15"
         />
         <AnimatePresence>
