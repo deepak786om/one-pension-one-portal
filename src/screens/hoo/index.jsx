@@ -7,6 +7,7 @@ import HooUtilities from "./HooUtilities.jsx";
 import Reports from "./Reports.jsx";
 import HooAnubhav from "./HooAnubhav.jsx";
 import EopCases from "./EopCases.jsx";
+import CircularHub from "./CircularHub.jsx";
 
 export const HOO_MODULES = {
   case_workbench: CaseWorkbench,
@@ -16,6 +17,7 @@ export const HOO_MODULES = {
   pension_revision: PensionRevision,
   hoo_grievance: OfficeGrievances,
   hoo_anubhav: HooAnubhav,
+  circular_hub: CircularHub,
   hoo_utility: HooUtilities,
   dept_reports: Reports,
 };

@@ -17,6 +17,7 @@ export const MODULES = {
   case_workbench: { label: "Pension Cases", icon: "briefcase", desc: "Process retiring employees end-to-end: verify, forms, compute, forward to PAO." },
   pension_revision: { label: "Pension Revision", icon: "repeat", desc: "Revise pension on pay-commission / restoration and forward to PAO." },
   hoo_utility: { label: "Utilities", icon: "database", desc: "Download ePPO / eSSA, identity card, undertakings and manual PPO." },
+  circular_hub: { label: "Circular & Knowledge Hub", icon: "bookMarked", desc: "Search circulars & judgements, the retirement-benefit matrix and guided pension know-how." },
   pension_sanction: { label: "Pension Sanction & PPO", icon: "badgeCheck", desc: "Compute, sanction and issue the PPO." },
   pao_workbench: { label: "Sanction & Issue PPO", icon: "badgeCheck", desc: "Scrutinise HOO cases, raise objections and issue the e-PPO." },
   pao_revision: { label: "Revision Authorities", icon: "repeat", desc: "Issue revised pension authorities on CPC / restoration." },
@@ -77,7 +78,7 @@ export const ROLES = [
   {
     id: "HOO", label: "Head of Office (HOO)", icon: "briefcase", group: "Government Officials",
     authTitle: "Parichay (GoI SSO)", authFields: parichay,
-    modules: ["case_workbench", "retiree_records", "family_pension", "eop", "pension_revision", "hoo_grievance", "hoo_anubhav", "hoo_utility", "dept_reports"], reg: officialReg,
+    modules: ["case_workbench", "retiree_records", "family_pension", "eop", "pension_revision", "hoo_grievance", "hoo_anubhav", "circular_hub", "hoo_utility", "dept_reports"], reg: officialReg,
   },
   {
     id: "PAO", label: "Pay & Accounts Officer (PAO)", icon: "badgeCheck", group: "Government Officials",
