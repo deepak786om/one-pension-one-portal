@@ -12,7 +12,7 @@ function Block({ title, children }) {
 }
 
 // Full read-only view of everything the pensioner shared in their Anubhav write-up.
-export default function AnubhavDetail({ sub }) {
+export default function AnubhavDetail({ sub, translate }) {
   const tone = sub.status === "Published" ? "ok" : sub.status === "Returned" ? "warn" : undefined;
   return (
     <>
@@ -41,6 +41,7 @@ export default function AnubhavDetail({ sub }) {
           <InfoRow label="Submitted on" value={sub.date} />
         </div>
         <div className="mt-4 space-y-4">
+          {translate}
           <Block title="The Anubhav (experience highlighted)">{sub.content}</Block>
           <Block title="Innovation / exceptional work">{sub.innovation}</Block>
           <Block title="Awards / medals / certificates">{sub.award}</Block>

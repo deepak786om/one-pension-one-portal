@@ -30,27 +30,28 @@ function TranslateBox({ sub }) {
   const [shown, setShown] = useState(false);
   const fromRegional = src !== "Auto-detect" && src !== "English";
   return (
-    <SectionCard title="Translate write-up" desc="Read this Anubhav in English — regional-language submissions are translated by Bhashini." icon="bookOpen"
-      action={<span className="text-[10px] font-bold uppercase tracking-wide text-primary">via Bhashini</span>}>
-      <div className="flex flex-wrap items-end gap-3">
-        <div>
-          <label className="mb-1 block text-xs font-semibold text-foreground">This write-up is in</label>
-          <select value={src} onChange={(e) => { setSrc(e.target.value); setShown(false); }} className="rounded-lg border border-border bg-white px-2.5 py-2 text-sm text-foreground">
-            {LANGS.map((l) => <option key={l}>{l}</option>)}
-          </select>
-        </div>
-        <Button variant="outline" className="px-4 py-2" onClick={() => setShown(true)}><Icon name="bookOpen" size={15} /> Translate to English</Button>
+    <div className="rounded-xl border border-primary/20 bg-primary/[0.03] p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="flex items-center gap-1.5 text-xs font-bold text-primary"><Icon name="bookOpen" size={14} /> Translate write-up</span>
+        <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-primary/70">via Bhashini</span>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <label className="text-[11px] font-semibold text-muted-foreground">This write-up is in</label>
+        <select value={src} onChange={(e) => { setSrc(e.target.value); setShown(false); }} className="rounded-lg border border-border bg-white px-2 py-1 text-xs text-foreground">
+          {LANGS.map((l) => <option key={l}>{l}</option>)}
+        </select>
+        <Button variant="outline" className="px-3 py-1.5 text-xs" onClick={() => setShown(true)}><Icon name="bookOpen" size={13} /> Translate to English</Button>
       </div>
       {shown && (
-        <div className="mt-3 rounded-xl border border-primary/20 bg-primary/[0.03] p-3.5">
-          <div className="mb-1.5 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-primary">
-            <Icon name="sparkles" size={13} /> English translation · via Bhashini
+        <div className="mt-2.5 rounded-lg border border-primary/20 bg-white p-3">
+          <div className="mb-1.5 flex flex-wrap items-center gap-2 text-[10.5px] font-bold uppercase tracking-wide text-primary">
+            <Icon name="sparkles" size={12} /> English translation · via Bhashini
             <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold normal-case text-primary">{fromRegional ? "Translated from " + src.replace(/\s*\(.*\)/, "") : "Source detected: English"}</span>
           </div>
           <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{sub.content}</p>
         </div>
       )}
-    </SectionCard>
+    </div>
   );
 }
 
@@ -133,7 +134,7 @@ export default function AnubhavReview({ stage, onBack }) {
           </div>
         </div>
         {aiOpen && <AiContentInsight summary={buildAnubhavSummary(sel)} />}
-        <AnubhavDetail sub={sel} />
+        <AnubhavDetail sub={sel} translate={<TranslateBox sub={sel} />} />
 
         {stage === "HOD" && (hooRating || hooRemarks) && (
           <SectionCard title="From the Head of Office" desc="The recommending HOO's soft rating and remarks." icon="userCheck">
@@ -141,8 +142,6 @@ export default function AnubhavReview({ stage, onBack }) {
             {hooRemarks ? <p className="mt-2 rounded-xl bg-muted/30 p-3.5 text-sm leading-relaxed text-foreground">{hooRemarks}</p> : null}
           </SectionCard>
         )}
-
-        <TranslateBox sub={sel} />
 
         {canAct ? (
           <SectionCard title="Your decision" desc={stage === "HOO" ? "Recommend this experience to the HOD, or return it to the author for revision." : "Publish this experience, reject it, or return it to the author for revision."} icon="scale">
