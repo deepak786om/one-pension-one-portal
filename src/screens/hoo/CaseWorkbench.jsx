@@ -2,9 +2,10 @@ import { useState } from "react";
 import ModuleShell from "../pensioner/ModuleShell.jsx";
 import Button from "../../components/ui/Button.jsx";
 import Icon from "../../lib/icons.jsx";
-import { SectionCard, KPI, StatusPill, DataTable, InfoRow, SuccessNote, Modal, Breadcrumb, EvidenceChecklist, Field, Input, Select, Textarea, HistoryTrail } from "../../components/ui/kit.jsx";
+import { SectionCard, KPI, StatusPill, DataTable, InfoRow, SuccessNote, Modal, Breadcrumb, EvidenceChecklist, ReconcileChecklist, Field, Input, Select, Textarea, HistoryTrail } from "../../components/ui/kit.jsx";
 import { cn } from "../../lib/cn.js";
 import { RETIREES, STAGES, BUCKETS, bdrBucket, newPPO, retireeProfile, verifyEvidence, formCheckEvidence, vigilance } from "../../data/hoo.js";
+import { setForm6aReturn, clearForm6aReturn } from "../../lib/form6aStore.js";
 import { basicPension, commutation, retirementGratuity, totalMonthly, formatINR } from "../../lib/pension.js";
 import AiCaseSummary, { AiSummaryButton } from "../../components/ui/AiCaseSummary.jsx";
 import { buildCaseSummary } from "../../lib/aiSummary.js";
@@ -13,9 +14,9 @@ import { getAiDefaultOpen } from "../../lib/prefs.js";
 // what happens to move OUT of each stage, and who owns it
 const ACT = {
   0: { kind: "page", task: "verify", cta: "Validate Service Book" },
-  1: { kind: "modal", modal: "send", cta: "Send Form 6A to retiree" },
+  1: { kind: "auto", actor: "retiree", cta: "Form 6A auto-sent — awaiting the retiree's submission", sim: "Simulate retiree submission" },
   2: { kind: "auto", actor: "retiree", cta: "Form 6A submission by the retiree", sim: "Simulate retiree submission" },
-  3: { kind: "modal", modal: "formcheck", cta: "Validate submitted Form 6A" },
+  3: { kind: "page", task: "formcheck", cta: "Validate submitted Form 6A" },
   4: { kind: "page", task: "pao", cta: "Compute Forms 7 & 8 → forward to PAO" },
   5: { kind: "auto", actor: "PAO", cta: "PPO issuance by the PAO", sim: "Simulate PAO PPO issue" },
 };
@@ -159,20 +160,40 @@ export default function CaseWorkbench({ onBack }) {
   const [histOpen, setHistOpen] = useState(false);   // case history is on-demand
   // task form state
   const [checks, setChecks] = useState([]);
-  const [dispatch, setDispatch] = useState("");
-  const [note, setNote] = useState("");
+  const [picks, setPicks] = useState({});      // HRMS/EIS reconciliation choices, key "itemKey|field" -> "hrms"|"eis"
+  const [returns, setReturns] = useState({});   // Form 6A entries returned to retiree, key -> remark
+  const [remarkKey, setRemarkKey] = useState(null);  // which item's return-remark box is open
+  const [remarkText, setRemarkText] = useState("");
 
   const sel = view.id ? rows.find((r) => r.id === view.id) : null;
-  const say = (m) => { setFlash(m); setTimeout(() => setFlash(""), 2400); };
+  const say = (m) => { setFlash(m); setTimeout(() => setFlash(""), 2600); };
   const toggle = (key) => setChecks((c) => c.includes(key) ? c.filter((x) => x !== key) : [...c, key]);
+  const pick = (itemKey, field, source) => setPicks((p) => ({ ...p, [`${itemKey}|${field}`]: source }));
+  const resetTask = () => { setChecks([]); setPicks({}); setReturns({}); setRemarkKey(null); setRemarkText(""); };
 
   const stamp = (id, stage, actor, action, remark, extra = {}) =>
     setRows((rs) => rs.map((r) => r.id === id ? { ...r, stage, ...extra, history: [...r.history, { date: "Today", actor, action, remark }] } : r));
 
-  const completeVerify = () => { stamp(sel.id, 1, "You (HOO)", "Service Book validated", `Service Book & ${sel.qualifyingYears}y qualifying service confirmed.`); setChecks([]); setView({ name: "case", id: sel.id }); say("Service Book validated — Form 6A can now be sent."); };
-  const sendForm = () => { stamp(sel.id, 2, "You (HOO)", "Form 6A sent to retiree", `Dispatched via ${dispatch}.${note ? " " + note : ""}`); setModal(null); setDispatch(""); setNote(""); say("Form 6A sent. Awaiting the retiree's submission."); };
-  const retireeSubmit = () => { stamp(sel.id, 3, "Retiree", "Forms received", "Form 6A + nominations + bank mandate submitted from the pensioner portal."); say("Retiree submitted Form 6A (auto-update)."); };
-  const verifyForms = () => { stamp(sel.id, 4, "You (HOO)", "Forms validated", "Submitted Form 6A validated against checklist."); setModal(null); setChecks([]); say("Forms validated — ready to compute Forms 7 & 8."); };
+  // Validation done → Form 6A is auto-sent to the retiree (no manual dispatch step).
+  const completeVerify = () => {
+    setRows((rs) => rs.map((r) => r.id === sel.id ? { ...r, stage: 2, history: [...r.history,
+      { date: "Today", actor: "You (HOO)", action: "Service Book validated", remark: `Service Book & ${sel.qualifyingYears}y qualifying service confirmed (HRMS/EIS reconciled).` },
+      { date: "Today", actor: "System", action: "Form 6A auto-sent to retiree", remark: "Sent to the pensioner portal automatically on validation." },
+    ] } : r));
+    resetTask(); setView({ name: "case", id: sel.id });
+    say("Service Book validated — Form 6A auto-sent to the retiree.");
+  };
+  const retireeSubmit = () => { stamp(sel.id, 3, "Retiree", "Forms received", "Form 6A + nominations + bank mandate submitted from the pensioner portal.", { form6aReturned: false }); say("Retiree submitted Form 6A (auto-update)."); };
+  const retireeResubmit = () => { clearForm6aReturn(); stamp(sel.id, 3, "Retiree", "Corrected Form 6A resubmitted", "Returned entries corrected and resubmitted from the pensioner portal.", { form6aReturned: false }); say("Retiree resubmitted the corrected Form 6A."); };
+  const verifyForms = () => { stamp(sel.id, 4, "You (HOO)", "Forms validated", "Submitted Form 6A validated against checklist.", { form6aReturned: false }); resetTask(); setView({ name: "case", id: sel.id }); say("Forms validated — ready to compute Forms 7 & 8."); };
+  const returnForms = () => {
+    const items = formCheckEvidence(sel);
+    const returned = Object.keys(returns).map((k) => ({ label: (items.find((i) => i.key === k) || {}).label || k, remark: returns[k] }));
+    setForm6aReturn({ caseId: sel.id, name: sel.name, at: "Today", by: "Head of Office", items: returned });
+    stamp(sel.id, 3, "You (HOO)", "Form 6A returned to retiree", returned.map((x) => `${x.label} — ${x.remark}`).join(" · "), { form6aReturned: true });
+    resetTask(); setView({ name: "case", id: sel.id });
+    say(`Form 6A returned to the retiree with ${returned.length} remark(s).`);
+  };
   const forwardPAO = () => { stamp(sel.id, 5, "You (HOO)", "Forms 7 & 8 sent to PAO", "Computation sheet & Service Book forwarded to PAO.", { returned: false }); setChecks([]); setView({ name: "case", id: sel.id }); say("Case forwarded to PAO. Awaiting PPO."); };
   const paoIssue = () => { const ppo = newPPO(); stamp(sel.id, 6, "PAO", "PPO issued", `${ppo} generated; SSA sent to bank.`, { ppo }); say(`PPO ${ppo} issued (auto-update from PAO).`); };
 
@@ -182,6 +203,8 @@ export default function CaseWorkbench({ onBack }) {
 
     if (view.task === "verify") {
       const items = verifyEvidence(sel);
+      const allMismatches = items.flatMap((it) => (it.rows || []).filter((r) => r.hrms !== r.eis).map((r) => `${it.key}|${r.field}`));
+      const resolvedCount = allMismatches.filter((k) => picks[k]).length;
       const allDone = items.every((i) => checks.includes(i.key));
       return (
         <ModuleShell icon="fileCheck" title="Validate Service Book" desc={`${sel.name} · ${sel.designation}`} onBack={() => setView({ name: "case", id: sel.id })}>
@@ -194,11 +217,82 @@ export default function CaseWorkbench({ onBack }) {
               <InfoRow label="Govt quarter" value={sel.quarter === "Yes" ? "Yes — NDC required" : "No"} />
             </div>
           </SectionCard>
-          <SectionCard title="Validation checklist" desc="Review the record shown against each item, then confirm. Nothing advances until all are validated." icon="listChecks">
-            <EvidenceChecklist items={items} checked={checks} onToggle={toggle} />
+          {allMismatches.length > 0 && (
+            <div className={cn("flex items-center gap-2.5 rounded-xl border p-3.5 text-sm", resolvedCount === allMismatches.length ? "border-success/30 bg-success/[0.06] text-success" : "border-saffron/40 bg-saffron/[0.06] text-saffron")}>
+              <Icon name={resolvedCount === allMismatches.length ? "check" : "info"} size={16} className="flex-shrink-0" />
+              <span className="text-foreground"><b>{resolvedCount}/{allMismatches.length}</b> HRMS ↔ EIS mismatch{allMismatches.length > 1 ? "es" : ""} resolved. Each field is shown from both systems; where they differ, choose which value to keep.</span>
+            </div>
+          )}
+          <SectionCard title="Validation checklist — HRMS vs EIS" desc="Review each field against both source systems. Resolve any highlighted mismatch (Keep HRMS / Keep EIS), then confirm. Nothing advances until all are validated." icon="listChecks">
+            <ReconcileChecklist items={items} checked={checks} onToggle={toggle} picks={picks} onPick={pick} />
             <Button variant="saffron" className="mt-4 w-full justify-center" disabled={!allDone} onClick={completeVerify}>
-              <Icon name="check" size={16} /> {allDone ? "Confirm validation" : `Validate all ${items.length} items to proceed`}
+              <Icon name="check" size={16} /> {allDone ? "Confirm validation → auto-send Form 6A" : `Validate all ${items.length} items to proceed`}
             </Button>
+          </SectionCard>
+        </ModuleShell>
+      );
+    }
+
+    if (view.task === "formcheck") {
+      const items = formCheckEvidence(sel);
+      const returnedKeys = Object.keys(returns);
+      const canConfirm = items.every((i) => checks.includes(i.key)) && returnedKeys.length === 0;
+      return (
+        <ModuleShell icon="fileCheck" title="Validate submitted Form 6A" desc={`${sel.name} · ${sel.designation}`} onBack={() => setView({ name: "case", id: sel.id })}>
+          {crumb("Validate submitted Form 6A")}
+          <SectionCard title="Submitted particulars" desc="Confirm each entry, or return any entry to the retiree with a remark. Returned entries are sent back to the pensioner portal for correction." icon="listChecks">
+            <ul className="space-y-2.5">
+              {items.map((it) => {
+                const on = checks.includes(it.key);
+                const ret = returns[it.key];
+                return (
+                  <li key={it.key} className={cn("rounded-xl2 border p-4 transition-colors", on ? "border-success/40 bg-success/[0.04]" : ret ? "border-red-300 bg-red-50" : "border-border bg-card")}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-start gap-2.5">
+                        <span className={cn("mt-0.5 grid h-5 w-5 flex-shrink-0 place-items-center rounded-md text-white", on ? "bg-success" : ret ? "bg-red-500" : "bg-muted-foreground/25")}><Icon name={ret ? "x" : "check"} size={12} /></span>
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-foreground">{it.label}</div>
+                          {it.data && (
+                            <div className="mt-2 grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+                              {it.data.map(([k, v]) => (
+                                <div key={k} className="flex items-baseline justify-between gap-3 border-b border-dashed border-border/70 pb-1">
+                                  <span className="text-xs text-muted-foreground">{k}</span><span className="text-right text-xs font-semibold text-foreground">{v}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {ret && <p className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-red-600"><Icon name="info" size={12} /> Returned to retiree — {ret}</p>}
+                        </div>
+                      </div>
+                      <div className="flex flex-shrink-0 flex-col items-stretch gap-1.5">
+                        <button type="button" onClick={() => { setReturns((s) => { const c = { ...s }; delete c[it.key]; return c; }); toggle(it.key); }}
+                          className={cn("rounded-lg px-3 py-1.5 text-xs font-bold transition-colors", on ? "bg-success/12 text-success" : "bg-primary text-primary-foreground hover:bg-primary-light")}>
+                          {on ? <span className="inline-flex items-center gap-1"><Icon name="check" size={13} /> Confirmed</span> : "Confirm"}
+                        </button>
+                        <button type="button" onClick={() => { setRemarkKey(it.key); setRemarkText(returns[it.key] || ""); }}
+                          className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50">Return…</button>
+                      </div>
+                    </div>
+                    {remarkKey === it.key && (
+                      <div className="mt-3 rounded-lg border border-red-200 bg-white p-3">
+                        <Textarea value={remarkText} onChange={(e) => setRemarkText(e.target.value)} placeholder="Reason to return this entry to the retiree (e.g. IFSC does not match the bank — please re-enter)." />
+                        <div className="mt-2 flex gap-2">
+                          <Button variant="saffron" className="px-3 py-1.5 text-xs" disabled={!remarkText.trim()} onClick={() => { setReturns((s) => ({ ...s, [it.key]: remarkText.trim() })); setChecks((c) => c.filter((x) => x !== it.key)); setRemarkKey(null); setRemarkText(""); }}>
+                            <Icon name="arrowUpRight" size={13} /> Return with remark
+                          </Button>
+                          <Button variant="ghost" className="px-3 py-1.5 text-xs" onClick={() => { setRemarkKey(null); setRemarkText(""); }}>Cancel</Button>
+                        </div>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="mt-4">
+              {returnedKeys.length > 0
+                ? <Button variant="saffron" className="w-full justify-center" onClick={returnForms}><Icon name="arrowUpRight" size={16} /> Return Form 6A to retiree ({returnedKeys.length} remark{returnedKeys.length > 1 ? "s" : ""})</Button>
+                : <Button variant="saffron" className="w-full justify-center" disabled={!canConfirm} onClick={verifyForms}><Icon name="check" size={16} /> {canConfirm ? "Confirm validation" : "Confirm or return each entry"}</Button>}
+            </div>
           </SectionCard>
         </ModuleShell>
       );
@@ -241,8 +335,19 @@ export default function CaseWorkbench({ onBack }) {
           </div>
         );
       }
+      if (sel.stage === 3 && sel.form6aReturned) {
+        return (
+          <div className="space-y-3">
+            <div className="flex items-start gap-2.5 rounded-xl border border-red-300 bg-red-50 p-3.5 text-sm text-red-800">
+              <Icon name="info" size={16} className="mt-0.5 flex-shrink-0" />
+              <span>Form 6A was <b>returned to the retiree</b> with remarks — awaiting the corrected resubmission from the pensioner portal.</span>
+            </div>
+            <Button variant="outline" className="w-full justify-center border-dashed text-xs" onClick={retireeResubmit}><Icon name="repeat" size={14} /> Demo: Simulate retiree resubmission</Button>
+          </div>
+        );
+      }
       const label = (sel.returned && sel.stage === 4) ? "Correct & re-forward to PAO" : a.cta;
-      const open = () => a.kind === "page" ? (setChecks([]), setView({ name: "task", id: sel.id, task: a.task })) : (setChecks([]), setModal(a.modal));
+      const open = () => { resetTask(); setView({ name: "task", id: sel.id, task: a.task }); };
       return <Button variant="saffron" className="w-full justify-center" onClick={open}><Icon name="arrowRight" size={16} /> {label}</Button>;
     };
 
@@ -278,32 +383,11 @@ export default function CaseWorkbench({ onBack }) {
           <KPI label="Pension type" value={sel.type} sub={sel.ministry || ""} icon="info" tone="primary" />
           <KPI label="Retirement" value={sel.dor} sub={`BDR ${sel.bdr}M`} icon="activity" tone="saffron" />
           <KPI label="PPO" value={sel.ppo ? "Issued" : "Pending"} sub={sel.ppo || "not issued"} icon="badgeCheck" tone={sel.ppo ? "success" : "primary"} />
-          <KPI label="Govt quarter" value={sel.quarter} sub={sel.quarter === "Yes" ? "NDC required" : "NDC N.A."} icon="building" tone="primary" />
+          {(() => {
+            const v = vigilance(sel);
+            return <KPI label="Vigilance clearance" value={v.status} sub={v.cleared ? `Ref ${v.ref}` : (v.overdue ? "Overdue — follow up CVO" : "Awaiting CVO")} icon={v.icon} tone={v.cleared ? "success" : "saffron"} />;
+          })()}
         </div>
-
-        {/* Vigilance clearance — visible at a glance (ideally obtained ≥ 3 months before retirement) */}
-        {(() => {
-          const v = vigilance(sel);
-          const styles = {
-            ok: "border-success/30 bg-success/[0.06] text-success",
-            warn: "border-saffron/40 bg-saffron/[0.06] text-saffron",
-            err: "border-red-300 bg-red-50 text-red-700",
-          }[v.tone];
-          return (
-            <div className={cn("flex flex-wrap items-center gap-3 rounded-xl border p-3.5", styles)}>
-              <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-white/70"><Icon name={v.icon} size={18} /></span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 text-sm font-bold text-foreground">
-                  Vigilance clearance
-                  <StatusPill tone={v.tone === "err" ? "warn" : v.tone}>{v.status}</StatusPill>
-                  {v.cleared && <span className="text-xs font-normal text-muted-foreground">Ref {v.ref}</span>}
-                </div>
-                <p className="mt-0.5 text-xs text-muted-foreground">{v.note}</p>
-              </div>
-              <span className="rounded-full bg-white/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Ideal: ≥ 3 months before DOR</span>
-            </div>
-          );
-        })()}
 
         {sel.returned && (
           <div className="flex items-start gap-2.5 rounded-xl border border-red-300 bg-red-50 p-3.5 text-sm text-red-800">
@@ -331,22 +415,6 @@ export default function CaseWorkbench({ onBack }) {
           <div className="mt-4 max-h-[60vh] overflow-y-auto pr-1"><HistoryTrail items={sel.history} /></div>
         </Modal>
 
-        <Modal open={modal === "send"} onClose={() => setModal(null)} maxW="max-w-md">
-          <h3 className="text-lg font-extrabold text-foreground">Send Form 6A to retiree</h3>
-          <p className="text-sm text-muted-foreground">{sel.name} · {sel.dor}</p>
-          <div className="mt-4 space-y-4">
-            <Field label="Dispatch mode" required><Select options={["Pensioner portal notification", "Registered post", "Official email"]} value={dispatch} onChange={(e) => setDispatch(e.target.value)} /></Field>
-            <Field label="Note (optional)"><Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. NDC from Estates still pending for govt quarter." /></Field>
-          </div>
-          <Button variant="saffron" className="mt-5 w-full justify-center" disabled={!dispatch} onClick={sendForm}><Icon name="arrowUpRight" size={16} /> {dispatch ? "Send Form 6A" : "Choose a dispatch mode"}</Button>
-        </Modal>
-
-        <Modal open={modal === "formcheck"} onClose={() => setModal(null)} maxW="max-w-2xl">
-          <h3 className="text-lg font-extrabold text-foreground">Validate submitted Form 6A</h3>
-          <p className="text-sm text-muted-foreground">Review the submitted particulars below, then confirm each before computing Forms 7 & 8.</p>
-          <div className="mt-4 max-h-[60vh] overflow-y-auto pr-1"><EvidenceChecklist items={formCheckEvidence(sel)} checked={checks} onToggle={toggle} /></div>
-          <Button variant="saffron" className="mt-5 w-full justify-center" disabled={!formCheckEvidence(sel).every((i) => checks.includes(i.key))} onClick={verifyForms}><Icon name="check" size={16} /> {formCheckEvidence(sel).every((i) => checks.includes(i.key)) ? "Confirm validation" : "Validate all items"}</Button>
-        </Modal>
       </ModuleShell>
     );
   }
