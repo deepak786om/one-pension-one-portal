@@ -27,7 +27,7 @@ export default function Footer({ onLogin, onRegister }) {
           <div className="md:col-span-2">
             <div className="flex items-center gap-2.5">
               <span className="grid h-9 w-9 place-items-center rounded-full bg-saffron text-saffron-foreground"><Icon name="shieldCheck" size={18} /></span>
-              <span className="text-sm font-extrabold text-foreground">One Pension, One Portal</span>
+              <span className="text-sm font-extrabold text-foreground">One Pension One Portal</span>
             </div>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
               An initiative of the Department of Pension &amp; Pensioners&apos; Welfare (DoPPW), Government of India — unifying
