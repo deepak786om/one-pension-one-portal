@@ -43,7 +43,7 @@ export default function Navbar({ onLogin, onRegister }) {
             <Icon name="shieldCheck" size={18} />
           </span>
           <span className="text-left leading-tight">
-            <span className="block text-sm font-extrabold text-foreground">One Pension, One Portal</span>
+            <span className="block text-sm font-extrabold text-foreground">One Pension One Portal</span>
             <span className="block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">DoPPW · Government of India</span>
           </span>
         </button>
