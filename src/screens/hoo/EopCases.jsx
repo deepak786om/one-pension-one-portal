@@ -47,6 +47,8 @@ export function computeEOFP(c) {
 
 const eopAdd = {
   subtypes: ["Disability Pension", "Extraordinary Family Pension (EOFP)"],
+  // death certificate required for the family-pension (attributable-death) sub-type
+  deathDoc: (sub) => sub.includes("Family"),
   hint: (s) => s === "Disability Pension"
     ? "To the disabled employee: service element (50%) + disability element (30% × broad-banded degree)."
     : "To the family on attributable death: flat special rate by category (B/C 40%, D 60%, E 100%).",
