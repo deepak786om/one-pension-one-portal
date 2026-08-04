@@ -452,7 +452,75 @@ export function EvidenceChecklist({ items, checked, onToggle }) {
               <button type="button" onClick={() => onToggle(it.key)}
                 className={cn("flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors",
                   on ? "bg-success/12 text-success" : "bg-primary text-primary-foreground hover:bg-primary-light")}>
-                {on ? <span className="inline-flex items-center gap-1"><Icon name="check" size={13} /> Verified</span> : "Confirm"}
+                {on ? <span className="inline-flex items-center gap-1"><Icon name="check" size={13} /> Confirmed</span> : "Confirm"}
+              </button>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+// Two-source reconciliation checklist (HRMS vs EIS). Each row shows both systems'
+// values; where they differ, the HOO must choose which value to keep before the
+// item can be confirmed. `picks` maps "itemKey|field" -> "hrms" | "eis".
+export function ReconcileChecklist({ items, checked, onToggle, picks, onPick }) {
+  return (
+    <ul className="space-y-2.5">
+      {items.map((it) => {
+        const rows = it.rows || [];
+        const mismatches = rows.filter((r) => r.hrms !== r.eis);
+        const resolved = mismatches.every((r) => picks[`${it.key}|${r.field}`]);
+        const on = checked.includes(it.key);
+        return (
+          <li key={it.key} className={cn("rounded-xl2 border p-4 transition-colors", on ? "border-success/40 bg-success/[0.04]" : mismatches.length && !resolved ? "border-saffron/40 bg-saffron/[0.04]" : "border-border bg-card")}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-2.5">
+                <span className={cn("mt-0.5 grid h-5 w-5 flex-shrink-0 place-items-center rounded-md text-white", on ? "bg-success" : "bg-muted-foreground/25")}><Icon name="check" size={12} /></span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
+                    {it.label}
+                    {mismatches.length > 0 && (
+                      <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold", resolved ? "bg-success/12 text-success" : "bg-saffron/15 text-saffron")}>
+                        <Icon name={resolved ? "check" : "info"} size={11} /> {resolved ? "mismatch resolved" : `${mismatches.length} mismatch${mismatches.length > 1 ? "es" : ""}`}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-2.5 space-y-1.5">
+                    {/* header row */}
+                    <div className="grid grid-cols-[1.2fr_1fr_1fr] gap-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                      <span>Field</span><span>HRMS</span><span>EIS</span>
+                    </div>
+                    {rows.map((rw) => {
+                      const diff = rw.hrms !== rw.eis;
+                      const pk = picks[`${it.key}|${rw.field}`];
+                      return (
+                        <div key={rw.field} className={cn("grid grid-cols-[1.2fr_1fr_1fr] items-center gap-2 rounded-lg px-2 py-1.5 text-xs", diff ? "bg-saffron/[0.07]" : "")}>
+                          <span className="text-muted-foreground">{rw.field}</span>
+                          <button type="button" disabled={!diff} onClick={() => onPick(it.key, rw.field, "hrms")}
+                            className={cn("truncate rounded px-1.5 py-1 text-left font-semibold transition-colors",
+                              !diff ? "text-foreground" : pk === "hrms" ? "bg-success/15 text-success ring-1 ring-success/40" : "text-foreground hover:bg-muted")}>
+                            {rw.hrms}{diff && pk === "hrms" && " ✓"}
+                          </button>
+                          <button type="button" disabled={!diff} onClick={() => onPick(it.key, rw.field, "eis")}
+                            className={cn("truncate rounded px-1.5 py-1 text-left font-semibold transition-colors",
+                              !diff ? "text-foreground" : pk === "eis" ? "bg-success/15 text-success ring-1 ring-success/40" : "text-foreground hover:bg-muted")}>
+                            {rw.eis}{diff && pk === "eis" && " ✓"}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {mismatches.length > 0 && !resolved && (
+                    <p className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-saffron"><Icon name="info" size={11} /> Choose which value to keep (HRMS or EIS) for each highlighted field.</p>
+                  )}
+                </div>
+              </div>
+              <button type="button" disabled={mismatches.length > 0 && !resolved} onClick={() => onToggle(it.key)}
+                className={cn("flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors",
+                  on ? "bg-success/12 text-success" : (mismatches.length && !resolved) ? "cursor-not-allowed bg-muted text-muted-foreground" : "bg-primary text-primary-foreground hover:bg-primary-light")}>
+                {on ? <span className="inline-flex items-center gap-1"><Icon name="check" size={13} /> Confirmed</span> : "Confirm"}
               </button>
             </div>
           </li>
