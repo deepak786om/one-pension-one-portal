@@ -4,7 +4,7 @@ import Button from "../../components/ui/Button.jsx";
 import Icon from "../../lib/icons.jsx";
 import { SectionCard, KPI, StatusPill, DataTable, InfoRow, SuccessNote, Modal, Breadcrumb, EvidenceChecklist, Field, Input, Select, Textarea, HistoryTrail } from "../../components/ui/kit.jsx";
 import { cn } from "../../lib/cn.js";
-import { RETIREES, STAGES, BUCKETS, bdrBucket, newPPO, retireeProfile, verifyEvidence, formCheckEvidence } from "../../data/hoo.js";
+import { RETIREES, STAGES, BUCKETS, bdrBucket, newPPO, retireeProfile, verifyEvidence, formCheckEvidence, vigilance } from "../../data/hoo.js";
 import { basicPension, commutation, retirementGratuity, totalMonthly, formatINR } from "../../lib/pension.js";
 import AiCaseSummary, { AiSummaryButton } from "../../components/ui/AiCaseSummary.jsx";
 import { buildCaseSummary } from "../../lib/aiSummary.js";
@@ -12,10 +12,10 @@ import { getAiDefaultOpen } from "../../lib/prefs.js";
 
 // what happens to move OUT of each stage, and who owns it
 const ACT = {
-  0: { kind: "page", task: "verify", cta: "Verify Service Book" },
+  0: { kind: "page", task: "verify", cta: "Validate Service Book" },
   1: { kind: "modal", modal: "send", cta: "Send Form 6A to retiree" },
   2: { kind: "auto", actor: "retiree", cta: "Form 6A submission by the retiree", sim: "Simulate retiree submission" },
-  3: { kind: "modal", modal: "formcheck", cta: "Verify submitted Form 6A" },
+  3: { kind: "modal", modal: "formcheck", cta: "Validate submitted Form 6A" },
   4: { kind: "page", task: "pao", cta: "Compute Forms 7 & 8 → forward to PAO" },
   5: { kind: "auto", actor: "PAO", cta: "PPO issuance by the PAO", sim: "Simulate PAO PPO issue" },
 };
@@ -103,11 +103,11 @@ function Lifecycle({ stage }) {
 function Checklist({ r }) {
   const items = [
     ["12M", "Retiree list sent to PAO", r.stage >= 4],
-    ["12M", "Service Book verified", r.stage >= 1],
+    ["12M", "Service Book validated", r.stage >= 1],
     ["10M", "NDC from D/o Estates", r.quarter === "Yes" ? r.stage >= 2 : "na"],
     ["8M", "Form 6A sent to retiree", r.stage >= 2],
     ["6M", "Forms filled & received", r.stage >= 3],
-    ["4M", "Verification by HOO", r.stage >= 4],
+    ["4M", "Validation by HOO", r.stage >= 4],
     ["4M", "Calc sheet & Service Book → PAO", r.stage >= 5],
     ["1M", "PPO generated", r.stage >= 6],
     ["0M", "SSA issued to bank", r.stage >= 6],
@@ -156,6 +156,7 @@ export default function CaseWorkbench({ onBack }) {
   const [filter, setFilter] = useState(null);
   const [flash, setFlash] = useState("");
   const [aiOpen, setAiOpen] = useState(getAiDefaultOpen());
+  const [histOpen, setHistOpen] = useState(false);   // case history is on-demand
   // task form state
   const [checks, setChecks] = useState([]);
   const [dispatch, setDispatch] = useState("");
@@ -168,10 +169,10 @@ export default function CaseWorkbench({ onBack }) {
   const stamp = (id, stage, actor, action, remark, extra = {}) =>
     setRows((rs) => rs.map((r) => r.id === id ? { ...r, stage, ...extra, history: [...r.history, { date: "Today", actor, action, remark }] } : r));
 
-  const completeVerify = () => { stamp(sel.id, 1, "You (HOO)", "Service Book verified", `Service Book & ${sel.qualifyingYears}y qualifying service confirmed.`); setChecks([]); setView({ name: "case", id: sel.id }); say("Service Book verified — Form 6A can now be sent."); };
+  const completeVerify = () => { stamp(sel.id, 1, "You (HOO)", "Service Book validated", `Service Book & ${sel.qualifyingYears}y qualifying service confirmed.`); setChecks([]); setView({ name: "case", id: sel.id }); say("Service Book validated — Form 6A can now be sent."); };
   const sendForm = () => { stamp(sel.id, 2, "You (HOO)", "Form 6A sent to retiree", `Dispatched via ${dispatch}.${note ? " " + note : ""}`); setModal(null); setDispatch(""); setNote(""); say("Form 6A sent. Awaiting the retiree's submission."); };
   const retireeSubmit = () => { stamp(sel.id, 3, "Retiree", "Forms received", "Form 6A + nominations + bank mandate submitted from the pensioner portal."); say("Retiree submitted Form 6A (auto-update)."); };
-  const verifyForms = () => { stamp(sel.id, 4, "You (HOO)", "Forms verified", "Submitted Form 6A verified against checklist."); setModal(null); setChecks([]); say("Forms verified — ready to compute Forms 7 & 8."); };
+  const verifyForms = () => { stamp(sel.id, 4, "You (HOO)", "Forms validated", "Submitted Form 6A validated against checklist."); setModal(null); setChecks([]); say("Forms validated — ready to compute Forms 7 & 8."); };
   const forwardPAO = () => { stamp(sel.id, 5, "You (HOO)", "Forms 7 & 8 sent to PAO", "Computation sheet & Service Book forwarded to PAO.", { returned: false }); setChecks([]); setView({ name: "case", id: sel.id }); say("Case forwarded to PAO. Awaiting PPO."); };
   const paoIssue = () => { const ppo = newPPO(); stamp(sel.id, 6, "PAO", "PPO issued", `${ppo} generated; SSA sent to bank.`, { ppo }); say(`PPO ${ppo} issued (auto-update from PAO).`); };
 
@@ -183,8 +184,8 @@ export default function CaseWorkbench({ onBack }) {
       const items = verifyEvidence(sel);
       const allDone = items.every((i) => checks.includes(i.key));
       return (
-        <ModuleShell icon="fileCheck" title="Verify Service Book" desc={`${sel.name} · ${sel.designation}`} onBack={() => setView({ name: "case", id: sel.id })}>
-          {crumb("Verify Service Book")}
+        <ModuleShell icon="fileCheck" title="Validate Service Book" desc={`${sel.name} · ${sel.designation}`} onBack={() => setView({ name: "case", id: sel.id })}>
+          {crumb("Validate Service Book")}
           <SectionCard title="Service & emoluments" icon="info">
             <div className="grid gap-x-8 sm:grid-cols-2">
               <InfoRow label="Qualifying service" value={`${sel.qualifyingYears} years`} />
@@ -193,10 +194,10 @@ export default function CaseWorkbench({ onBack }) {
               <InfoRow label="Govt quarter" value={sel.quarter === "Yes" ? "Yes — NDC required" : "No"} />
             </div>
           </SectionCard>
-          <SectionCard title="Verification checklist" desc="Review the record shown against each item, then confirm. Nothing advances until all are verified." icon="listChecks">
+          <SectionCard title="Validation checklist" desc="Review the record shown against each item, then confirm. Nothing advances until all are validated." icon="listChecks">
             <EvidenceChecklist items={items} checked={checks} onToggle={toggle} />
             <Button variant="saffron" className="mt-4 w-full justify-center" disabled={!allDone} onClick={completeVerify}>
-              <Icon name="check" size={16} /> {allDone ? "Confirm verification" : `Verify all ${items.length} items to proceed`}
+              <Icon name="check" size={16} /> {allDone ? "Confirm validation" : `Validate all ${items.length} items to proceed`}
             </Button>
           </SectionCard>
         </ModuleShell>
@@ -252,6 +253,7 @@ export default function CaseWorkbench({ onBack }) {
           <Breadcrumb items={[{ label: "Pension cases", onClick: () => setView({ name: "cockpit" }) }, { label: sel.name }]} />
           <div className="flex items-center gap-2">
             <AiSummaryButton open={aiOpen} onToggle={() => setAiOpen((o) => !o)} />
+            <Button variant="outline" className="px-4 py-2 text-xs" onClick={() => setHistOpen(true)} title="Case history"><Icon name="clock" size={14} /> Case history</Button>
             <Button variant="outline" className="px-4 py-2 text-xs" onClick={() => setView({ name: "task", id: sel.id, task: "profile" })}><Icon name="userCheck" size={14} /> View pensioner profile</Button>
           </div>
         </div>
@@ -270,7 +272,7 @@ export default function CaseWorkbench({ onBack }) {
             const monthly = totalMonthly({ pension: p, drPercent: 50 });
             return [["Basic pension", formatINR(p)], ["Retirement gratuity", formatINR(grat)], ["Monthly (basic + DR)", formatINR(monthly)], ["Qualifying service", `${sel.qualifyingYears} years`]];
           })(),
-          missing: sel.stage < 1 ? ["The Service Book is yet to be verified."] : sel.stage < 3 ? ["Form 6A from the retiree is awaited."] : [],
+          missing: sel.stage < 1 ? ["The Service Book is yet to be validated."] : sel.stage < 3 ? ["Form 6A from the retiree is awaited."] : [],
         })} />}
         <div className="grid gap-4 sm:grid-cols-4">
           <KPI label="Pension type" value={sel.type} sub={sel.ministry || ""} icon="info" tone="primary" />
@@ -278,6 +280,30 @@ export default function CaseWorkbench({ onBack }) {
           <KPI label="PPO" value={sel.ppo ? "Issued" : "Pending"} sub={sel.ppo || "not issued"} icon="badgeCheck" tone={sel.ppo ? "success" : "primary"} />
           <KPI label="Govt quarter" value={sel.quarter} sub={sel.quarter === "Yes" ? "NDC required" : "NDC N.A."} icon="building" tone="primary" />
         </div>
+
+        {/* Vigilance clearance — visible at a glance (ideally obtained ≥ 3 months before retirement) */}
+        {(() => {
+          const v = vigilance(sel);
+          const styles = {
+            ok: "border-success/30 bg-success/[0.06] text-success",
+            warn: "border-saffron/40 bg-saffron/[0.06] text-saffron",
+            err: "border-red-300 bg-red-50 text-red-700",
+          }[v.tone];
+          return (
+            <div className={cn("flex flex-wrap items-center gap-3 rounded-xl border p-3.5", styles)}>
+              <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-white/70"><Icon name={v.icon} size={18} /></span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                  Vigilance clearance
+                  <StatusPill tone={v.tone === "err" ? "warn" : v.tone}>{v.status}</StatusPill>
+                  {v.cleared && <span className="text-xs font-normal text-muted-foreground">Ref {v.ref}</span>}
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">{v.note}</p>
+              </div>
+              <span className="rounded-full bg-white/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Ideal: ≥ 3 months before DOR</span>
+            </div>
+          );
+        })()}
 
         {sel.returned && (
           <div className="flex items-start gap-2.5 rounded-xl border border-red-300 bg-red-50 p-3.5 text-sm text-red-800">
@@ -291,17 +317,19 @@ export default function CaseWorkbench({ onBack }) {
 
         {sel.stage >= 4 && <Computation r={sel} />}
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <SectionCard title="Next action" desc="The current step in this case — open it to capture the required data." icon="fileCheck">
-            {renderAction()}
-            <div className="mt-4 border-t border-border pt-4">
-              <div className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">BDR checklist</div>
-              <Checklist r={sel} />
-            </div>
-          </SectionCard>
+        <SectionCard title="Next action" desc="The current step in this case — open it to capture the required data." icon="fileCheck">
+          {renderAction()}
+          <div className="mt-4 border-t border-border pt-4">
+            <div className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">BDR checklist</div>
+            <Checklist r={sel} />
+          </div>
+        </SectionCard>
 
-          <SectionCard title="Case history" icon="activity"><HistoryTrail items={sel.history} /></SectionCard>
-        </div>
+        <Modal open={histOpen} onClose={() => setHistOpen(false)} maxW="max-w-lg">
+          <h3 className="flex items-center gap-2 text-lg font-extrabold text-foreground"><Icon name="clock" size={18} className="text-primary" /> Case history</h3>
+          <p className="text-sm text-muted-foreground">{sel.name} · {sel.designation}</p>
+          <div className="mt-4 max-h-[60vh] overflow-y-auto pr-1"><HistoryTrail items={sel.history} /></div>
+        </Modal>
 
         <Modal open={modal === "send"} onClose={() => setModal(null)} maxW="max-w-md">
           <h3 className="text-lg font-extrabold text-foreground">Send Form 6A to retiree</h3>
@@ -314,10 +342,10 @@ export default function CaseWorkbench({ onBack }) {
         </Modal>
 
         <Modal open={modal === "formcheck"} onClose={() => setModal(null)} maxW="max-w-2xl">
-          <h3 className="text-lg font-extrabold text-foreground">Verify submitted Form 6A</h3>
+          <h3 className="text-lg font-extrabold text-foreground">Validate submitted Form 6A</h3>
           <p className="text-sm text-muted-foreground">Review the submitted particulars below, then confirm each before computing Forms 7 & 8.</p>
           <div className="mt-4 max-h-[60vh] overflow-y-auto pr-1"><EvidenceChecklist items={formCheckEvidence(sel)} checked={checks} onToggle={toggle} /></div>
-          <Button variant="saffron" className="mt-5 w-full justify-center" disabled={!formCheckEvidence(sel).every((i) => checks.includes(i.key))} onClick={verifyForms}><Icon name="check" size={16} /> {formCheckEvidence(sel).every((i) => checks.includes(i.key)) ? "Confirm verification" : "Verify all items"}</Button>
+          <Button variant="saffron" className="mt-5 w-full justify-center" disabled={!formCheckEvidence(sel).every((i) => checks.includes(i.key))} onClick={verifyForms}><Icon name="check" size={16} /> {formCheckEvidence(sel).every((i) => checks.includes(i.key)) ? "Confirm validation" : "Validate all items"}</Button>
         </Modal>
       </ModuleShell>
     );
