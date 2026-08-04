@@ -29,6 +29,7 @@ export default function CaseProcessor({
   const [pan, setPan] = useState("");                    // PAN for EIS lookup
   const [fetchedKeys, setFetchedKeys] = useState([]);    // fields auto-filled from EIS
   const [fetching, setFetching] = useState(false);       // EIS lookup in progress
+  const [deathCert, setDeathCert] = useState({ file: "", no: "", authority: "", validating: false, validated: false });
   const sel = view.id ? rows.find((c) => c.id === view.id) : null;
   const say = (m) => { setFlash(m); setTimeout(() => setFlash(""), 2400); };
   const set = (id, step, extra = {}, hist = null) => setRows((rs) => rs.map((c) => {
@@ -38,7 +39,14 @@ export default function CaseProcessor({
   }));
   const toggle = (k) => setChecks((c) => c.includes(k) ? c.filter((x) => x !== k) : [...c, k]);
   const setN = (k, v) => setNf((s) => ({ ...s, [k]: v }));
-  const openNew = () => { setNfSub(addConfig.subtypes[0]); setNf({}); setPan(""); setFetchedKeys([]); setFetching(false); setView({ name: "new" }); };
+  const openNew = () => { setNfSub(addConfig.subtypes[0]); setNf({}); setPan(""); setFetchedKeys([]); setFetching(false); setDeathCert({ file: "", no: "", authority: "", validating: false, validated: false }); setView({ name: "new" }); };
+  const validateDeathCert = () => {
+    setDeathCert((s) => ({ ...s, validating: true }));
+    setTimeout(() => {
+      setDeathCert((s) => ({ ...s, validating: false, validated: true }));
+      say("Death certificate validated against the Civil Registration System (CRS) — name & date of death matched.");
+    }, 900);
+  };
   const panValid = /^[A-Za-z]{5}[0-9]{4}[A-Za-z]$/.test(pan.trim());
   const fetchEis = () => {
     const sub = nfSub || addConfig.subtypes[0];
@@ -55,7 +63,10 @@ export default function CaseProcessor({
   const createCase = () => {
     const built = addConfig.build(nf, nfSub);
     const id = "N" + (rows.length + 1) + Date.now().toString().slice(-3);
-    const c = { id, subtype: nfSub, step: 0, ppo: "", ...built, history: [{ date: "Today", actor: "You (HOO)", action: "Case registered", remark: `${nfSub} — new case${nf.pan ? " · PAN " + nf.pan : ""}` }] };
+    const dc = deathCert.validated ? { deathCert: { file: deathCert.file, no: deathCert.no, authority: deathCert.authority, validated: true } } : {};
+    const history = [{ date: "Today", actor: "You (HOO)", action: "Case registered", remark: `${nfSub} — new case${nf.pan ? " · PAN " + nf.pan : ""}` }];
+    if (deathCert.validated) history.push({ date: "Today", actor: "You (HOO)", action: "Death certificate validated", remark: `Cert. ${deathCert.no}${deathCert.authority ? " · " + deathCert.authority : ""} — verified against CRS.` });
+    const c = { id, subtype: nfSub, step: 0, ppo: "", ...built, ...dc, history };
     setRows((rs) => [c, ...rs]);
     setView({ name: "case", id });
     say("Case registered — start the workflow at step 1.");
@@ -262,25 +273,68 @@ export default function CaseProcessor({
               : <p className="mt-3 text-xs text-muted-foreground">Authenticated via Parichay SSO. For the demo, any valid-format PAN returns a record; the seeded PANs ABCPV1234L / PQRSM5678N / LMNOP4321Q return specific records.</p>}
         </SectionCard>
 
-        {fetched && (
-          <SectionCard title="Case particulars" desc="Fields marked EIS were fetched automatically (editable if a correction is needed). Enter the rest." icon="fileText">
-            <div className="grid gap-4 sm:grid-cols-2">
-              {fields.map((f) => {
-                const isEis = fetchedKeys.includes(f.key);
-                return (
-                  <Field key={f.key} label={<span>{f.label}{isEis && eisBadge}</span>} required={f.required} hint={f.hint}>
-                    {f.type === "select"
-                      ? <Select options={f.options} value={nf[f.key] || ""} onChange={(e) => setN(f.key, e.target.value)} />
-                      : <Input type={f.type === "number" ? "number" : "text"} value={nf[f.key] || ""} onChange={(e) => setN(f.key, e.target.value)} placeholder={f.placeholder || ""} className={isEis ? "border-success/40 bg-success/[0.03]" : ""} />}
-                  </Field>
-                );
-              })}
-            </div>
-            <Button variant="saffron" className="mt-5 w-full justify-center" disabled={!valid} onClick={createCase}>
-              <Icon name="arrowRight" size={16} /> {valid ? "Create case & start workflow" : "Complete the required fields"}
-            </Button>
-          </SectionCard>
-        )}
+        {fetched && (() => {
+          const needDeath = addConfig.deathDoc ? addConfig.deathDoc(sub, nf) : false;
+          const certReady = deathCert.file.trim() !== "" && deathCert.no.trim() !== "";
+          const canCreate = valid && (!needDeath || deathCert.validated);
+          return (
+            <>
+              <SectionCard title="Case particulars" desc="Fields marked EIS were fetched automatically (editable if a correction is needed). Enter the rest." icon="fileText">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {fields.map((f) => {
+                    const isEis = fetchedKeys.includes(f.key);
+                    return (
+                      <Field key={f.key} label={<span>{f.label}{isEis && eisBadge}</span>} required={f.required} hint={f.hint}>
+                        {f.type === "select"
+                          ? <Select options={f.options} value={nf[f.key] || ""} onChange={(e) => setN(f.key, e.target.value)} />
+                          : <Input type={f.type === "number" ? "number" : "text"} value={nf[f.key] || ""} onChange={(e) => setN(f.key, e.target.value)} placeholder={f.placeholder || ""} className={isEis ? "border-success/40 bg-success/[0.03]" : ""} />}
+                      </Field>
+                    );
+                  })}
+                </div>
+              </SectionCard>
+
+              {needDeath && (
+                <SectionCard title="Death Certificate" desc="Upload the death certificate and validate it before registering the case." icon="fileCheck"
+                  action={deathCert.validated ? <StatusPill tone="ok">Validated</StatusPill> : <StatusPill tone="warn">Required</StatusPill>}>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Death certificate (PDF / JPG / PNG)" required hint="Issued by the Registrar of Births & Deaths / Municipal authority.">
+                      <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-border bg-white px-3.5 py-2.5 text-sm text-muted-foreground transition-colors hover:border-primary/50">
+                        <Icon name="fileText" size={15} className="text-primary" />
+                        <span className="truncate">{deathCert.file || "Choose file…"}</span>
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+                          onChange={(e) => setDeathCert((s) => ({ ...s, file: e.target.files?.[0]?.name || "", validated: false }))} />
+                      </label>
+                    </Field>
+                    <Field label="Certificate number" required>
+                      <Input value={deathCert.no} onChange={(e) => setDeathCert((s) => ({ ...s, no: e.target.value, validated: false }))} placeholder="e.g. MC/DEL/2026/004521" />
+                    </Field>
+                    <Field label="Issuing authority" hint="Municipal Corporation / Registrar (optional).">
+                      <Input value={deathCert.authority} onChange={(e) => setDeathCert((s) => ({ ...s, authority: e.target.value }))} placeholder="e.g. Municipal Corporation of Delhi" />
+                    </Field>
+                    <div className="flex items-end">
+                      <Button variant={deathCert.validated ? "outline" : "primary"} className="w-full justify-center"
+                        disabled={!certReady || deathCert.validating || deathCert.validated} onClick={validateDeathCert}>
+                        {deathCert.validating
+                          ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> Validating…</>
+                          : deathCert.validated
+                            ? <><Icon name="check" size={15} /> Validated</>
+                            : <><Icon name="shieldCheck" size={15} /> Validate certificate</>}
+                      </Button>
+                    </div>
+                  </div>
+                  {deathCert.validated
+                    ? <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-success/8 px-3 py-2 text-xs font-semibold text-success"><Icon name="check" size={13} /> Verified against the Civil Registration System (CRS) — name & date of death matched.</p>
+                    : <p className="mt-3 text-xs text-muted-foreground">Attach the certificate and enter its number, then validate. For the demo, validation is simulated against the CRS.</p>}
+                </SectionCard>
+              )}
+
+              <Button variant="saffron" className="w-full justify-center" disabled={!canCreate} onClick={createCase}>
+                <Icon name="arrowRight" size={16} /> {canCreate ? "Create case & start workflow" : (needDeath && !deathCert.validated ? "Upload & validate the death certificate" : "Complete the required fields")}
+              </Button>
+            </>
+          );
+        })()}
       </ModuleShell>
     );
   }
