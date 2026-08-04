@@ -10,11 +10,10 @@ import Footer from "./components/Footer.jsx";
 import PortalShell from "./components/PortalShell.jsx";
 
 import Login from "./screens/Login.jsx";
-import Auth from "./screens/Auth.jsx";
 import Register from "./screens/Register.jsx";
 import Dashboard from "./screens/Dashboard.jsx";
 
-// view: "landing" | "login" | "auth" | "register" | "dashboard"
+// view: "landing" | "login" | "register" | "dashboard"
 export default function App() {
   const [view, setView] = useState("landing");
   const [roleId, setRoleId] = useState(null);
@@ -51,15 +50,6 @@ export default function App() {
               {view === "login" && (
                 <Login
                   key="login"
-                  onSelectRole={(id) => { setRoleId(id); setView("auth"); }}
-                  onRegister={openRegister}
-                />
-              )}
-              {view === "auth" && (
-                <Auth
-                  key={"auth-" + roleId}
-                  roleId={roleId}
-                  onBack={() => setView("login")}
                   onSignIn={(id) => { setRoleId(id); setView("dashboard"); }}
                   onRegister={openRegister}
                 />
