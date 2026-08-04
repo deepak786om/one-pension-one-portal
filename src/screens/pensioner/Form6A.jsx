@@ -4,8 +4,10 @@ import Button from "../../components/ui/Button.jsx";
 import Icon from "../../lib/icons.jsx";
 import { SectionCard, Field, Input, Select, RadioPills, InfoRow, SuccessNote } from "../../components/ui/kit.jsx";
 import { FORM6A, PENSIONER, NOMINEES } from "../../data/pensioner.js";
+import { getForm6aReturn, clearForm6aReturn } from "../../lib/form6aStore.js";
 
 export default function Form6A({ onBack, onSubmitted }) {
+  const returned = getForm6aReturn();  // entries the HOO returned with remarks (if any)
   const [f, setF] = useState({
     present: PENSIONER.presentAddress, permanent: PENSIONER.presentAddress, marital: "Married",
     mobile: PENSIONER.mobile, email: PENSIONER.email, height: "", marks: "",
@@ -31,6 +33,27 @@ export default function Form6A({ onBack, onSubmitted }) {
 
   return (
     <ModuleShell icon="fileText" title="Form 6A — Pension Application" desc="Single Comprehensive Pension Form, to be submitted before your PPO is generated." onBack={onBack}>
+      {/* Action needed — entries returned by the Head of Office with remarks */}
+      {returned && returned.items && returned.items.length > 0 && (
+        <div className="rounded-xl2 border border-red-300 bg-red-50 p-4">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-xl bg-red-500 text-white"><Icon name="info" size={18} /></span>
+            <div>
+              <div className="text-sm font-extrabold text-red-800">Action needed — your Head of Office returned {returned.items.length} {returned.items.length === 1 ? "entry" : "entries"}</div>
+              <div className="text-xs text-red-700/80">Please correct the following and resubmit your Form 6A.</div>
+            </div>
+          </div>
+          <ul className="mt-3 space-y-2">
+            {returned.items.map((it, i) => (
+              <li key={i} className="rounded-lg border border-red-200 bg-white p-3">
+                <div className="text-sm font-bold text-foreground">{it.label}</div>
+                <div className="mt-0.5 text-xs text-red-700"><span className="font-semibold">HOO remark:</span> {it.remark}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* deadline */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl2 border border-saffron/30 bg-gradient-to-r from-saffron/10 to-transparent p-4">
         <div className="flex items-center gap-3">
@@ -95,7 +118,7 @@ export default function Form6A({ onBack, onSubmitted }) {
 
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" onClick={() => {}}><Icon name="fileText" size={16} /> Save draft</Button>
-        <Button variant="saffron" disabled={!valid} onClick={() => { setDone(true); onSubmitted && onSubmitted(); }}>
+        <Button variant="saffron" disabled={!valid} onClick={() => { clearForm6aReturn(); setDone(true); onSubmitted && onSubmitted(); }}>
           <Icon name="arrowRight" size={16} /> {valid ? "Submit with eSign → HOO" : "Complete the required fields"}
         </Button>
       </div>
