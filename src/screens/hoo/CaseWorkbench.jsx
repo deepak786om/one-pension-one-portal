@@ -270,7 +270,7 @@ export default function CaseWorkbench({ onBack }) {
                           {on ? <span className="inline-flex items-center gap-1"><Icon name="check" size={13} /> Confirmed</span> : "Confirm"}
                         </button>
                         <button type="button" onClick={() => { setRemarkKey(it.key); setRemarkText(returns[it.key] || ""); }}
-                          className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50">Return…</button>
+                          className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50">Return</button>
                       </div>
                     </div>
                     {remarkKey === it.key && (
