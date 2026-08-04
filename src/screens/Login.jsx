@@ -49,22 +49,35 @@ export default function Login({ onSignIn, onRegister }) {
   }
 
   return (
-    <Screen className="mx-auto max-w-xl px-4 py-12 sm:px-6">
-      <div className="overflow-hidden rounded-xl2 border border-border bg-card shadow-elegant">
-        {/* header band */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-primary to-[#0a1f44] p-7 text-white">
-          <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-saffron/40 blur-2xl" />
-          <span className="relative inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide">
-            <Icon name="shieldCheck" size={13} className="text-saffron-light" /> Secure Single Sign-On
-          </span>
-          <h1 className="relative mt-3 text-2xl font-black tracking-tight sm:text-3xl">Sign in to your pension portal</h1>
-          <p className="relative mt-2 text-sm leading-relaxed text-white/80">
-            Choose your role — the right credentials appear automatically. Role-Based Access Control shows you only the services you are authorised to use.
-          </p>
-        </div>
+    <Screen className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+      <div className="overflow-hidden rounded-xl2 border border-border bg-card shadow-elegant md:grid md:grid-cols-[1.05fr_1fr]">
+        {/* brand banner (left) */}
+        <aside className="relative flex flex-col justify-between gap-8 overflow-hidden bg-gradient-to-br from-primary to-[#0a1f44] p-7 text-white">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-saffron/40 blur-2xl" />
+          <div className="relative flex items-center gap-2 text-sm font-bold">
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-saffron text-saffron-foreground"><Icon name="shieldCheck" size={17} /></span>
+            One Pension, One Portal
+          </div>
+          <div className="relative">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide">
+              <Icon name="shieldCheck" size={13} className="text-saffron-light" /> Secure Single Sign-On
+            </span>
+            <h1 className="mt-4 text-2xl font-black leading-tight tracking-tight sm:text-3xl">Sign in to your pension portal</h1>
+            <p className="mt-2 text-sm leading-relaxed text-white/80">
+              Choose your role — the right credentials appear automatically. Role-Based Access Control shows you only the services you are authorised to use.
+            </p>
+          </div>
+          <div className="relative flex flex-wrap gap-2">
+            {TRUST.map((t) => (
+              <span key={t} className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-xs font-semibold">
+                <Icon name="shieldCheck" size={13} className="text-saffron-light" /> {t}
+              </span>
+            ))}
+          </div>
+        </aside>
 
-        {/* form */}
-        <div className="p-7">
+        {/* form (right) */}
+        <div className="flex flex-col justify-center p-7">
           {/* role dropdown */}
           <label className="block">
             <span className="mb-1.5 block text-xs font-semibold text-foreground">Your role</span>
@@ -139,14 +152,6 @@ export default function Login({ onSignIn, onRegister }) {
                     Edit details
                   </button>
                 )}
-
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {TRUST.map((t) => (
-                    <span key={t} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
-                      <Icon name="shieldCheck" size={12} className="text-primary" /> {t}
-                    </span>
-                  ))}
-                </div>
               </motion.div>
             )}
           </AnimatePresence>
