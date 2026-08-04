@@ -31,7 +31,7 @@ export default function PortalShell({ onClose, children }) {
           <span className="grid h-8 w-8 place-items-center rounded-full bg-saffron text-saffron-foreground">
             <Icon name="shieldCheck" size={17} />
           </span>
-          <span className="text-sm font-bold">One Pension, One Portal</span>
+          <span className="text-sm font-bold">One Pension One Portal</span>
         </button>
         <button
           onClick={onClose}
