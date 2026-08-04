@@ -5,7 +5,7 @@ import { SectionCard, Field, Input } from "../../components/ui/kit.jsx";
 import { PENSIONER } from "../../data/pensioner.js";
 import {
   formatINR, basicPension, dearnessRelief, totalMonthly, commutation, retirementGratuity,
-  DEFAULT_COMMUTATION_FACTOR,
+  DEFAULT_COMMUTATION_FACTOR, MIN_PENSION,
 } from "../../lib/pension.js";
 
 const TABS = [
@@ -20,6 +20,29 @@ function Result({ label, value, big }) {
     <div className="flex items-center justify-between rounded-xl border border-border bg-muted/30 px-4 py-3">
       <span className="text-sm font-medium text-muted-foreground">{label}</span>
       <span className={big ? "text-xl font-extrabold text-primary" : "text-base font-bold text-foreground"}>{value}</span>
+    </div>
+  );
+}
+
+// Live "show your working" — the formula with the current values substituted.
+function Working({ steps }) {
+  return (
+    <div className="mt-4 rounded-xl border border-primary/15 bg-primary/[0.03] p-4">
+      <div className="mb-2.5 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-primary">
+        <Icon name="calculator" size={13} /> How this is calculated
+      </div>
+      <ol className="space-y-2.5">
+        {steps.map((s, i) => (
+          <li key={i} className="flex gap-2.5">
+            <span className="mt-0.5 grid h-5 w-5 flex-shrink-0 place-items-center rounded-full bg-primary/12 text-[11px] font-bold text-primary">{i + 1}</span>
+            <div className="min-w-0">
+              <div className="text-[13px] font-semibold text-foreground">{s.label}</div>
+              <div className="mt-1 overflow-x-auto rounded-lg bg-white px-3 py-1.5 font-mono text-[12.5px] text-slate-700 ring-1 ring-border">{s.expr}</div>
+              {s.note && <div className="mt-1 text-[11px] text-muted-foreground">{s.note}</div>}
+            </div>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
@@ -206,6 +229,13 @@ export default function Calculators({ onBack }) {
             {bp.eligible ? <Result label="Estimated basic pension / month" value={formatINR(bp.pension)} big /> : <Result label="Eligibility" value="Not eligible (need 10+ yrs)" />}
             {bp.note && <p className="text-xs text-muted-foreground">{bp.note}</p>}
           </div>
+          <Working steps={bp.eligible ? [
+            { label: "Check eligibility (needs ≥ 10 years qualifying service)", expr: `${Number(years)} years ${Number(years) >= 10 ? "≥" : "<"} 10 → ${Number(years) >= 10 ? "eligible" : "not eligible"}` },
+            { label: "Basic pension = 50% of last emoluments", expr: `0.50 × ${formatINR(Number(emol))} = ${formatINR(Math.round(Number(emol) * 0.5))}` , note: bp.floored ? `Below the minimum, so raised to ${formatINR(MIN_PENSION)}.` : "Half of the last basic pay; service beyond the minimum does not raise the 50%." },
+            { label: "Estimated basic pension / month", expr: `= ${formatINR(bp.pension)}` },
+          ] : [
+            { label: "Eligibility", expr: `${Number(years)} years < 10 → no service pension`, note: "A service gratuity is payable instead of a monthly pension." },
+          ]} />
         </SectionCard>
       )}
 
@@ -219,6 +249,10 @@ export default function Calculators({ onBack }) {
             <Result label="Dearness Relief amount" value={formatINR(drAmt)} />
             <Result label="Total monthly (pension + DR)" value={formatINR(totalMonthly({ pension: Number(pension), drPercent: Number(dr) }))} big />
           </div>
+          <Working steps={[
+            { label: "Dearness Relief = DR% × basic pension", expr: `${Number(dr)}% × ${formatINR(Number(pension))} = ${formatINR(drAmt)}`, note: "DR is calculated on the full basic pension, even if part of it has been commuted." },
+            { label: "Total monthly = basic pension + DR", expr: `${formatINR(Number(pension))} + ${formatINR(drAmt)} = ${formatINR(totalMonthly({ pension: Number(pension), drPercent: Number(dr) }))}` },
+          ]} />
           <DrWhatIf pension={pension} dr={dr} />
         </SectionCard>
       )}
@@ -235,6 +269,11 @@ export default function Calculators({ onBack }) {
             <Result label="Lump sum received" value={formatINR(com.lumpSum)} big />
             <Result label="Reduced pension (for 15 yrs)" value={formatINR(com.reducedPension) + " / month"} />
           </div>
+          <Working steps={[
+            { label: "Commuted portion = commute% × basic pension (max 40%)", expr: `${com.fraction}% × ${formatINR(Number(pension))} = ${formatINR(com.commutedPortion)} / month` },
+            { label: "Lump sum = commuted portion × 12 × commutation factor", expr: `${formatINR(com.commutedPortion)} × 12 × ${Number(factor)} = ${formatINR(com.lumpSum)}`, note: `Factor ${Number(factor)} corresponds to the age on the next birthday (CCS commutation table).` },
+            { label: "Reduced pension = basic − commuted portion (for 15 years)", expr: `${formatINR(Number(pension))} − ${formatINR(com.commutedPortion)} = ${formatINR(com.reducedPension)} / month`, note: "Restored to the full basic pension after 15 years. DR is still paid on the full basic pension throughout." },
+          ]} />
           <CommutationAdvisor pension={pension} factor={factor} />
         </SectionCard>
       )}
@@ -251,6 +290,18 @@ export default function Calculators({ onBack }) {
             <Result label="Estimated retirement gratuity" value={formatINR(grat.gratuity)} big />
             <p className="text-xs text-muted-foreground">Capped by: {grat.cappedBy === "ceiling" ? "₹25 lakh ceiling" : grat.cappedBy === "16.5x" ? "16.5× emoluments" : "length of service"}.</p>
           </div>
+          {(() => {
+            const withDA = Math.round(Number(emol) * (1 + Number(dr) / 100));
+            const byService = Math.round(0.25 * withDA * grat.halfYears);
+            return (
+              <Working steps={[
+                { label: "Emoluments including DA = last pay × (1 + DA%)", expr: `${formatINR(Number(emol))} × (1 + ${Number(dr)}%) = ${formatINR(withDA)}` },
+                { label: "Six-monthly periods of service = min(2 × years, 66)", expr: `min(2 × ${Number(years)}, 66) = ${grat.halfYears}` },
+                { label: "Retirement gratuity = ¼ × (pay + DA) × six-monthly periods", expr: `0.25 × ${formatINR(withDA)} × ${grat.halfYears} = ${formatINR(byService)}` },
+                { label: "Apply the caps (16.5× emoluments and ₹25 lakh)", expr: `= ${formatINR(grat.gratuity)}`, note: `Capped by ${grat.cappedBy === "ceiling" ? "the ₹25 lakh ceiling" : grat.cappedBy === "16.5x" ? "16.5× emoluments" : "length of service"}.` },
+              ]} />
+            );
+          })()}
         </SectionCard>
       )}
 
