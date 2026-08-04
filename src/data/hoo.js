@@ -13,10 +13,10 @@ export const HOO_OFFICE = {
 
 // 7-stage superannuation pipeline
 export const STAGES = [
-  { key: "verify", label: "Service Verification", bdr: "12–15M", icon: "fileCheck" },
+  { key: "verify", label: "Service Validation", bdr: "12–15M", icon: "fileCheck" },
   { key: "send", label: "Send Form 6A", bdr: "8M", icon: "arrowUpRight" },
   { key: "received", label: "Forms Received", bdr: "6M", icon: "fileText" },
-  { key: "forms", label: "Forms Verification", bdr: "4M", icon: "fileCheck" },
+  { key: "forms", label: "Forms Validation", bdr: "4M", icon: "fileCheck" },
   { key: "pao", label: "Sent to PAO (7 & 8)", bdr: "4M", icon: "arrowUpRight" },
   { key: "ppo", label: "PPO Status", bdr: "1M", icon: "badgeCheck" },
   { key: "done", label: "Completed", bdr: "—", icon: "check" },
@@ -24,10 +24,10 @@ export const STAGES = [
 
 // the action the HOO performs to MOVE OUT of a given stage
 export const STAGE_PRIMARY = [
-  "Verify Service Book",
+  "Validate Service Book",
   "Send Form 6A to retiree",
   "Mark forms received",
-  "Verify submitted forms",
+  "Validate submitted forms",
   "Generate Form 7 & 8 → send to PAO",
   "Record PPO as issued",
   null,
@@ -56,10 +56,10 @@ export const RETIREES = [
     type: "Superannuation", dor: "31 Jul 2026", bdr: 1, source: "EIS", quarter: "No",
     stage: 5, ppo: "", emoluments: 144200, qualifyingYears: 34,
     history: hist(
-      ["10 Aug 2025", "You (HOO)", "Service Book verified", "33y 11m qualifying service confirmed."],
+      ["10 Aug 2025", "You (HOO)", "Service Book validated", "33y 11m qualifying service confirmed."],
       ["12 Oct 2025", "You (HOO)", "Form 6A sent to retiree", ""],
       ["28 Nov 2025", "Retiree", "Forms received", "Form 6A + nominations submitted."],
-      ["15 Jan 2026", "You (HOO)", "Forms verified", ""],
+      ["15 Jan 2026", "You (HOO)", "Forms validated", ""],
       ["02 Feb 2026", "You (HOO)", "Forms 7 & 8 sent to PAO", "Computation sheet forwarded."],
     ),
   },
@@ -68,10 +68,10 @@ export const RETIREES = [
     type: "Superannuation", dor: "31 Aug 2026", bdr: 2, source: "EIS", quarter: "No",
     stage: 4, ppo: "", emoluments: 121800, qualifyingYears: 30,
     history: hist(
-      ["20 Sep 2025", "You (HOO)", "Service Book verified", ""],
+      ["20 Sep 2025", "You (HOO)", "Service Book validated", ""],
       ["18 Nov 2025", "You (HOO)", "Form 6A sent to retiree", ""],
       ["09 Dec 2025", "Retiree", "Forms received", ""],
-      ["22 Jan 2026", "You (HOO)", "Forms verified", "Ready to compute."],
+      ["22 Jan 2026", "You (HOO)", "Forms validated", "Ready to compute."],
     ),
   },
   {
@@ -79,7 +79,7 @@ export const RETIREES = [
     type: "Superannuation", dor: "31 Aug 2026", bdr: 2, source: "EIS", quarter: "No",
     stage: 4, ppo: "", returned: true, emoluments: 118600, qualifyingYears: 29,
     history: hist(
-      ["15 Sep 2025", "You (HOO)", "Service Book verified", ""],
+      ["15 Sep 2025", "You (HOO)", "Service Book validated", ""],
       ["20 Nov 2025", "You (HOO)", "Form 6A sent to retiree", ""],
       ["11 Dec 2025", "Retiree", "Forms received", ""],
       ["20 Jan 2026", "You (HOO)", "Forms 7 & 8 sent to PAO", ""],
@@ -91,7 +91,7 @@ export const RETIREES = [
     type: "Superannuation", dor: "30 Sep 2026", bdr: 3, source: "Manual", quarter: "No",
     stage: 3, ppo: "", emoluments: 71200, qualifyingYears: 28,
     history: hist(
-      ["28 Oct 2025", "You (HOO)", "Service Book verified", ""],
+      ["28 Oct 2025", "You (HOO)", "Service Book validated", ""],
       ["02 Dec 2025", "You (HOO)", "Form 6A sent to retiree", ""],
       ["10 Jan 2026", "Retiree", "Forms received", ""],
     ),
@@ -101,7 +101,7 @@ export const RETIREES = [
     type: "Superannuation", dor: "31 Oct 2026", bdr: 4, source: "EIS", quarter: "Yes",
     stage: 2, ppo: "", emoluments: 98400, qualifyingYears: 31,
     history: hist(
-      ["20 Nov 2025", "You (HOO)", "Service Book verified", ""],
+      ["20 Nov 2025", "You (HOO)", "Service Book validated", ""],
       ["10 Jan 2026", "You (HOO)", "Form 6A sent to retiree", "NDC from D/o Estates pending (govt quarter)."],
     ),
   },
@@ -109,7 +109,7 @@ export const RETIREES = [
     id: "R5", name: "Priya Sharma", pan: "PRYPS7788R", designation: "Deputy Director", level: "Level 12",
     type: "Superannuation", dor: "31 Dec 2026", bdr: 6, source: "EIS", quarter: "No",
     stage: 1, ppo: "", emoluments: 165100, qualifyingYears: 27,
-    history: hist(["05 Jan 2026", "You (HOO)", "Service Book verified", ""]),
+    history: hist(["05 Jan 2026", "You (HOO)", "Service Book validated", ""]),
   },
   {
     id: "R6", name: "Vinod Gupta", pan: "VINPG9900S", designation: "Senior Section Engineer", level: "Level 8",
@@ -122,10 +122,10 @@ export const RETIREES = [
     type: "Superannuation", dor: "30 Jun 2026", bdr: 0, source: "EIS", quarter: "No",
     stage: 6, ppo: "PPO-2026-DEL-0101887", emoluments: 84600, qualifyingYears: 32,
     history: hist(
-      ["10 Jul 2025", "You (HOO)", "Service Book verified", ""],
+      ["10 Jul 2025", "You (HOO)", "Service Book validated", ""],
       ["12 Sep 2025", "You (HOO)", "Form 6A sent to retiree", ""],
       ["01 Oct 2025", "Retiree", "Forms received", ""],
-      ["20 Nov 2025", "You (HOO)", "Forms verified", ""],
+      ["20 Nov 2025", "You (HOO)", "Forms validated", ""],
       ["05 Dec 2025", "You (HOO)", "Forms 7 & 8 sent to PAO", ""],
       ["18 Jan 2026", "PAO", "PPO issued", "PPO-2026-DEL-0101887 generated; SSA sent to bank."],
     ),
@@ -210,6 +210,27 @@ export const REPORTS = {
 let CASE_SEQ = 101900;
 export function newPPO() { CASE_SEQ += Math.floor(Math.random() * 30) + 5; return `PPO-2026-DEL-0${CASE_SEQ}`; }
 
+// ---------- Vigilance clearance ----------
+// Vigilance clearance should ideally be obtained at least 3 months before the
+// date of retirement (i.e. before BDR reaches 3 months). Returns a status the
+// HOO can see at a glance for each case.
+const VIG_SEED = { R1: "Cleared", R2: "Cleared", R8: "Cleared", R3: "In progress", R4: "Cleared", R5: "In progress", R6: "Not initiated", R7: "Cleared" };
+export function vigilance(r) {
+  const status = VIG_SEED[r.id] || (r.stage >= 4 ? "Cleared" : "In progress");
+  const cleared = status === "Cleared";
+  // overdue = not cleared and within the 3-month window before retirement
+  const overdue = !cleared && typeof r.bdr === "number" && r.bdr <= 3;
+  const tone = cleared ? "ok" : overdue ? "err" : "warn";
+  const icon = cleared ? "shieldCheck" : "shieldQuestion";
+  const ref = cleared ? `VIG/${r.id}/2026` : "—";
+  const note = cleared
+    ? "No vigilance / disciplinary case pending — clearance on record."
+    : overdue
+      ? `Retires in ${r.bdr} month(s) — clearance overdue (should be obtained ≥ 3 months prior). Follow up with the CVO.`
+      : "Reference sent to the Chief Vigilance Officer (CVO); awaiting clearance.";
+  return { status, cleared, overdue, tone, icon, ref, note };
+}
+
 // Build a full retiree profile (the pensioner's record the HOO can open from a case).
 export function retireeProfile(r) {
   const dorYear = parseInt((r.dor.match(/\d{4}/) || ["2026"])[0], 10);
@@ -246,7 +267,7 @@ function _meta(r) {
   return { dorYear, joinYear: dorYear - r.qualifyingYears, dobYear: dorYear - 60, last4 };
 }
 
-// Service Book verification (Case Workbench → Verify Service Book)
+// Service Book validation (Case Workbench → Validate Service Book)
 export function verifyEvidence(r) {
   const m = _meta(r);
   const items = [
@@ -255,7 +276,7 @@ export function verifyEvidence(r) {
     { key: "qs", label: "Qualifying service computed — no unverified breaks",
       data: [["Date of joining", `c. ${m.joinYear}`], ["Date of retirement", r.dor], ["Gross service", `${r.qualifyingYears} years`], ["Non-qualifying breaks", "Nil"], ["Net qualifying service", `${r.qualifyingYears} years`]],
       flag: "No unverified breaks found", flagTone: "ok" },
-    { key: "sb", label: "Service Book pages verified, signed & dated",
+    { key: "sb", label: "Service Book pages validated, signed & dated",
       data: [["Service Book no.", `SB/${r.id}/${m.joinYear}`], ["Volumes", r.qualifyingYears > 30 ? "2" : "1"], ["Last attestation", "31 Mar 2026"], ["Missing entries", "None"]] },
     { key: "leave", label: "Leave, deputation & suspension entries reconciled",
       data: [["EOL without medical cert.", "Nil"], ["Deputation period", "Nil"], ["Suspension", "None"], ["LTC / advance recoveries", "Cleared"]] },
@@ -267,7 +288,7 @@ export function verifyEvidence(r) {
   return items;
 }
 
-// Submitted Form 6A verification (Case Workbench → Verify submitted Form 6A)
+// Submitted Form 6A validation (Case Workbench → Verify submitted Form 6A)
 export function formCheckEvidence(r) {
   const m = _meta(r);
   return [
