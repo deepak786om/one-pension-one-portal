@@ -56,7 +56,7 @@ export default function Login({ onSignIn, onRegister }) {
           <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-saffron/40 blur-2xl" />
           <div className="relative flex items-center gap-2 text-sm font-bold">
             <span className="grid h-8 w-8 place-items-center rounded-full bg-saffron text-saffron-foreground"><Icon name="shieldCheck" size={17} /></span>
-            One Pension, One Portal
+            One Pension One Portal
           </div>
           <div className="relative">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide">
