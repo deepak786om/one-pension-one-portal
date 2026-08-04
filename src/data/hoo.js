@@ -108,8 +108,8 @@ export const RETIREES = [
   {
     id: "R5", name: "Priya Sharma", pan: "PRYPS7788R", designation: "Deputy Director", level: "Level 12",
     type: "Superannuation", dor: "31 Dec 2026", bdr: 6, source: "EIS", quarter: "No",
-    stage: 1, ppo: "", emoluments: 165100, qualifyingYears: 27,
-    history: hist(["05 Jan 2026", "You (HOO)", "Service Book validated", ""]),
+    stage: 2, ppo: "", emoluments: 165100, qualifyingYears: 27,
+    history: hist(["05 Jan 2026", "You (HOO)", "Service Book validated", ""], ["05 Jan 2026", "System", "Form 6A auto-sent to retiree", "Sent to the pensioner portal on validation."]),
   },
   {
     id: "R6", name: "Vinod Gupta", pan: "VINPG9900S", designation: "Senior Section Engineer", level: "Level 8",
@@ -267,24 +267,59 @@ function _meta(r) {
   return { dorYear, joinYear: dorYear - r.qualifyingYears, dobYear: dorYear - 60, last4 };
 }
 
-// Service Book validation (Case Workbench → Validate Service Book)
+// Service Book validation (Case Workbench → Validate Service Book).
+// Each field is shown from BOTH source systems — HRMS and EIS. Where the two
+// disagree, the row is a mismatch the HOO must resolve (Keep HRMS / Keep EIS).
+// row: { field, hrms, eis }  ·  when hrms === eis it is a match.
 export function verifyEvidence(r) {
   const m = _meta(r);
+  // deterministic per-retiree "noise" so a couple of fields differ between systems
+  const n = (r.pan || "").split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const joinEis = m.joinYear;
+  const joinHrms = (n % 2 === 0) ? m.joinYear : m.joinYear - 1;        // DOJ sometimes differs by a year
+  const attHrms = "31 Mar 2026";
+  const attEis = (n % 3 === 0) ? "28 Feb 2026" : "31 Mar 2026";        // last attestation sometimes differs
+  const payEis = r.emoluments;
+  const payHrms = (n % 5 === 0) ? r.emoluments - 400 : r.emoluments;   // last pay sometimes differs
+  const grossHrms = joinHrms !== joinEis ? r.qualifyingYears + 1 : r.qualifyingYears;
+
   const items = [
-    { key: "id", label: "Identity & PAN confirmed against Service Book",
-      data: [["Name", r.name], ["PAN", r.pan], ["Date of birth", `${m.dobYear} (retires at 60)`], ["Designation", `${r.designation} · ${r.level}`]] },
-    { key: "qs", label: "Qualifying service computed — no unverified breaks",
-      data: [["Date of joining", `c. ${m.joinYear}`], ["Date of retirement", r.dor], ["Gross service", `${r.qualifyingYears} years`], ["Non-qualifying breaks", "Nil"], ["Net qualifying service", `${r.qualifyingYears} years`]],
-      flag: "No unverified breaks found", flagTone: "ok" },
-    { key: "sb", label: "Service Book pages validated, signed & dated",
-      data: [["Service Book no.", `SB/${r.id}/${m.joinYear}`], ["Volumes", r.qualifyingYears > 30 ? "2" : "1"], ["Last attestation", "31 Mar 2026"], ["Missing entries", "None"]] },
-    { key: "leave", label: "Leave, deputation & suspension entries reconciled",
-      data: [["EOL without medical cert.", "Nil"], ["Deputation period", "Nil"], ["Suspension", "None"], ["LTC / advance recoveries", "Cleared"]] },
+    { key: "id", label: "Identity & PAN confirmed against Service Book", rows: [
+      { field: "Name", hrms: r.name, eis: r.name },
+      { field: "PAN", hrms: r.pan, eis: r.pan },
+      { field: "Date of birth", hrms: `${m.dobYear} (retires at 60)`, eis: `${m.dobYear} (retires at 60)` },
+      { field: "Designation", hrms: `${r.designation} · ${r.level}`, eis: `${r.designation} · ${r.level}` },
+    ] },
+    { key: "qs", label: "Qualifying service computed — no unverified breaks", rows: [
+      { field: "Date of joining", hrms: `c. ${joinHrms}`, eis: `c. ${joinEis}` },
+      { field: "Date of retirement", hrms: r.dor, eis: r.dor },
+      { field: "Gross service", hrms: `${grossHrms} years`, eis: `${r.qualifyingYears} years` },
+      { field: "Non-qualifying breaks", hrms: "Nil", eis: "Nil" },
+    ] },
+    { key: "sb", label: "Service Book pages validated, signed & dated", rows: [
+      { field: "Service Book no.", hrms: `SB/${r.id}/${joinHrms}`, eis: `SB/${r.id}/${joinEis}` },
+      { field: "Volumes", hrms: r.qualifyingYears > 30 ? "2" : "1", eis: r.qualifyingYears > 30 ? "2" : "1" },
+      { field: "Last attestation", hrms: attHrms, eis: attEis },
+      { field: "Missing entries", hrms: "None", eis: "None" },
+    ] },
+    { key: "leave", label: "Leave, deputation & suspension entries reconciled", rows: [
+      { field: "EOL without medical cert.", hrms: "Nil", eis: "Nil" },
+      { field: "Deputation period", hrms: "Nil", eis: "Nil" },
+      { field: "Suspension", hrms: "None", eis: "None" },
+      { field: "LTC / advance recoveries", hrms: "Cleared", eis: "Cleared" },
+    ] },
   ];
-  if (r.quarter === "Yes") items.push({ key: "ndc", label: "No-Dues Certificate from D/o Estates (govt quarter)",
-    data: [["Quarter", "Type-IV / Block C"], ["Vacation", "On or before DOR"], ["NDC status", "Awaited from Estates"]], flag: "NDC pending — follow up", flagTone: "warn" });
-  items.push({ key: "emol", label: "Last emoluments confirmed for Forms 7 & 8",
-    data: [["Last basic pay", formatINR(r.emoluments)], ["Pay level", r.level], ["DA at DOR", "50%"], ["NPA", "N.A."]] });
+  if (r.quarter === "Yes") items.push({ key: "ndc", label: "No-Dues Certificate from D/o Estates (govt quarter)", rows: [
+    { field: "Quarter", hrms: "Type-IV / Block C", eis: "Type-IV / Block C" },
+    { field: "Vacation", hrms: "On or before DOR", eis: "On or before DOR" },
+    { field: "NDC status", hrms: "Awaited from Estates", eis: "Awaited from Estates" },
+  ] });
+  items.push({ key: "emol", label: "Last emoluments confirmed for Forms 7 & 8", rows: [
+    { field: "Last basic pay", hrms: formatINR(payHrms), eis: formatINR(payEis) },
+    { field: "Pay level", hrms: r.level, eis: r.level },
+    { field: "DA at DOR", hrms: "50%", eis: "50%" },
+    { field: "NPA", hrms: "N.A.", eis: "N.A." },
+  ] });
   return items;
 }
 
