@@ -3,7 +3,7 @@
   "private": true,
   "version": "2.0.0",
   "type": "module",
-  "description": "One Pension, One Portal — unified DoPPW pensioners' portal (React + Vite + Tailwind + Framer Motion). RBAC login, role-adaptive registration with dynamic CTAs, and role-gated dashboards.",
+  "description": "One Pension One Portal — unified DoPPW pensioners' portal (React + Vite + Tailwind + Framer Motion). RBAC login, role-adaptive registration with dynamic CTAs, and role-gated dashboards.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
