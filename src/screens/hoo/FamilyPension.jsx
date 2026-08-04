@@ -33,6 +33,8 @@ const RELATIONS = ["Spouse", "Son (guardian: father)", "Daughter", "Dependent pa
 
 const familyAdd = {
   subtypes: ["In-Service Death", "Death / Ineligibility"],
+  // death certificate is required for in-service death and for death-of-pensioner triggers
+  deathDoc: (sub, nf) => sub === "In-Service Death" || (nf?.trigger || "").startsWith("Death"),
   hint: (s) => s === "In-Service Death"
     ? "Death of a serving employee — enhanced 50% for 10 years + death gratuity."
     : "Death of a pensioner after retirement, or ineligibility of the current recipient (next-in-line) — no death gratuity.",
